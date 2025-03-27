@@ -28,6 +28,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -492,9 +493,14 @@ func (a *AppService) Exchange(ctx context.Context, req *v1.ExchangeRequest) (*v1
 	})
 }
 
+var lockBuy sync.Mutex
+
 // Buy  buySomething.
 func (a *AppService) Buy(ctx context.Context, req *v1.BuyRequest) (*v1.BuyReply, error) {
 	// 在上下文 context 中取出 claims 对象
+	lockBuy.Lock()
+	defer lockBuy.Unlock()
+
 	var (
 		//err           error
 		userId int64
@@ -569,11 +575,7 @@ func (a *AppService) Buy(ctx context.Context, req *v1.BuyRequest) (*v1.BuyReply,
 	// TODO 验证签名
 	//password := fmt.Sprintf("%x", md5.Sum([]byte(req.SendBody.Password)))
 
-	return &v1.BuyReply{
-		Status: "ok",
-	}, nil
-
-	//return a.uuc.Buy(ctx, req, user)
+	return a.uuc.Buy(ctx, req, user)
 }
 
 // SetToday  SetToday.

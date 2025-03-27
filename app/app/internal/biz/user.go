@@ -227,6 +227,16 @@ type Reward struct {
 	CreatedAt        time.Time
 }
 
+type BuyRecord struct {
+	ID        int64
+	UserId    int64
+	Status    int64
+	Amount    float64
+	AmountGet float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type Pagination struct {
 	PageNum  int
 	PageSize int
@@ -349,9 +359,10 @@ type UserInfoRepo interface {
 type UserRepo interface {
 	GetEthUserRecordListByUserId(ctx context.Context, userId int64) ([]*EthUserRecord, error)
 	InRecordNew(ctx context.Context, userId int64, address string, amount int64, coinType string) error
-	UpdateUserNewTwoNew(ctx context.Context, userId int64, amountUsdt float64, last uint64, amountRawFloat float64, coinType string) error
+	UpdateUserNewTwoNew(ctx context.Context, userId int64, amount uint64, amountUsdt float64, last uint64) error
 	UpdateUserMyTotalAmount(ctx context.Context, userId int64, amountUsdt float64) error
-	UpdateUserRewardRecommend2(ctx context.Context, userId, recommendUserId int64, userAddress string, amountUsdt float64) (int64, error)
+	UpdateUserVip(ctx context.Context, userId int64, vip int64) error
+	UpdateUserRewardRecommend2(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amountUsdt float64) error
 	UpdateUserRewardAreaTwo(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	GetUserById(ctx context.Context, Id int64) (*User, error)
@@ -1817,17 +1828,14 @@ func (uuc *UserUseCase) AmountTo(ctx context.Context, req *v1.AmountToRequest, u
 }
 
 func (uuc *UserUseCase) Buy(ctx context.Context, req *v1.BuyRequest, user *User) (*v1.BuyReply, error) {
-	return &v1.BuyReply{
-		Status: "ok",
-	}, nil
-	//var (
-	//	amount   = req.SendBody.Amount
-	//	configs  []*Config
-	//	bPrice   float64
-	//	coinType string
-	//	err      error
-	//)
-	//
+	var (
+		amount = req.SendBody.Amount
+		//configs  []*Config
+		//bPrice   float64
+		//coinType string
+		err error
+	)
+
 	//configs, err = uuc.configRepo.GetConfigByKeys(ctx,
 	//	"b_price",
 	//)
@@ -1843,7 +1851,7 @@ func (uuc *UserUseCase) Buy(ctx context.Context, req *v1.BuyRequest, user *User)
 	//		}
 	//	}
 	//}
-	//
+
 	//var (
 	//	tmpValue    int64
 	//	strValue    string
@@ -1862,75 +1870,68 @@ func (uuc *UserUseCase) Buy(ctx context.Context, req *v1.BuyRequest, user *User)
 	//		Status: "错误金额",
 	//	}, nil
 	//}
-	//
+
 	//amountRaw := float64(0)
 	//amountKsdt := float64(0)
 	//amountRaw = float64(amount) / bPrice
-	//if amountRaw > userBalance.BalanceUsdtFloat {
-	//	return &v1.BuyReply{
-	//		Status: "usdt余额不足",
-	//	}, nil
-	//}
-	//
-	//coinType = "USDT"
-	//
-	//notExistDepositResult := make([]*EthUserRecord, 0)
-	//notExistDepositResult = append(notExistDepositResult, &EthUserRecord{ // 两种币的记录
-	//	UserId:    user.ID,
-	//	Status:    "success",
-	//	Type:      "deposit",
-	//	Amount:    strValue,
-	//	RelAmount: tmpValue,
-	//	CoinType:  coinType,
-	//	Last:      0,
-	//})
-	//
-	//var (
-	//	res bool
-	//	msg string
-	//)
-	//res, err, msg = uuc.EthUserRecordHandle(ctx, amount, amountRaw, amountKsdt, coinType, notExistDepositResult...)
-	//if !res || nil != err {
-	//	fmt.Println(err)
-	//	return &v1.BuyReply{
-	//		Status: msg,
-	//	}, nil
-	//}
-	//
-	//return &v1.BuyReply{
-	//	Status: "ok",
-	//}, nil
-}
 
-func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, amountRaw float64, amountKsdt float64, coinType string, ethUserRecord ...*EthUserRecord) (bool, error, string) {
+	if 100 > float64(amount) {
+		return &v1.BuyReply{
+			Status: "金额最小100",
+		}, nil
+	}
+
+	if amount > user.Amount {
+		return &v1.BuyReply{
+			Status: "usdt余额不足",
+		}, nil
+	}
+
+	notExistDepositResult := make([]*EthUserRecord, 0)
+	notExistDepositResult = append(notExistDepositResult, &EthUserRecord{ // 两种币的记录
+		UserId:    user.ID,
+		Status:    "success",
+		Type:      "deposit",
+		Amount:    "",
+		RelAmount: int64(amount),
+		CoinType:  "USDT",
+		Last:      0,
+	})
 
 	var (
-		err            error
-		configs        []*Config
-		va4            float64
-		va5            float64
-		va6            float64
-		va7            float64
-		va8            float64
-		recommendLevel float64
+		res bool
+		msg string
+	)
+	res, err, msg = uuc.EthUserRecordHandle(ctx, amount, notExistDepositResult...)
+	if !res || nil != err {
+		fmt.Println(err)
+		return &v1.BuyReply{
+			Status: msg,
+		}, nil
+	}
+
+	return &v1.BuyReply{
+		Status: "ok",
+	}, nil
+}
+
+func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, ethUserRecord ...*EthUserRecord) (bool, error, string) {
+
+	var (
+		err          error
+		configs      []*Config
+		recommendOne float64
+		recommendTwo float64
 	)
 
 	// 配置
-	configs, _ = uuc.configRepo.GetConfigByKeys(ctx, "va4", "va5", "va6", "va7", "va8", "recommend_level")
+	configs, _ = uuc.configRepo.GetConfigByKeys(ctx, "recommend_one", "recommend_two")
 	if nil != configs {
 		for _, vConfig := range configs {
-			if "va4" == vConfig.KeyName {
-				va4, _ = strconv.ParseFloat(vConfig.Value, 10)
-			} else if "va5" == vConfig.KeyName {
-				va5, _ = strconv.ParseFloat(vConfig.Value, 10)
-			} else if "va6" == vConfig.KeyName {
-				va6, _ = strconv.ParseFloat(vConfig.Value, 10)
-			} else if "va7" == vConfig.KeyName {
-				va7, _ = strconv.ParseFloat(vConfig.Value, 10)
-			} else if "va8" == vConfig.KeyName {
-				va8, _ = strconv.ParseFloat(vConfig.Value, 10)
-			} else if "recommend_level" == vConfig.KeyName {
-				recommendLevel, _ = strconv.ParseFloat(vConfig.Value, 10)
+			if "recommend_one" == vConfig.KeyName {
+				recommendOne, _ = strconv.ParseFloat(vConfig.Value, 10)
+			} else if "recommend_two" == vConfig.KeyName {
+				recommendTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
 			}
 		}
 	}
@@ -1973,9 +1974,8 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 	}
 
 	var (
-		users       []*User
-		usersMap    map[int64]*User
-		stopUserIds map[int64]bool
+		users    []*User
+		usersMap map[int64]*User
 	)
 	users, err = uuc.repo.GetAllUsers(ctx)
 	if nil == users {
@@ -1997,33 +1997,25 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 
 		last := uint64(0)
 		newAmountUsdt := usersMap[v.UserId].AmountUsdt + float64(amount)
-		if 300 <= newAmountUsdt && newAmountUsdt < 500 {
+		if 100 <= newAmountUsdt && newAmountUsdt < 599 {
 			last = 1
-		} else if 500 <= newAmountUsdt && newAmountUsdt < 1000 {
+		} else if 600 <= newAmountUsdt && newAmountUsdt < 2999 {
 			last = 2
-		} else if 1000 <= newAmountUsdt && newAmountUsdt < 5000 {
+		} else if 3000 <= newAmountUsdt && newAmountUsdt < 9999 {
 			last = 3
-		} else if 5000 <= newAmountUsdt && newAmountUsdt < 30000 {
+		} else if 10000 <= newAmountUsdt && newAmountUsdt < 29999 {
 			last = 4
-		} else if 30000 <= newAmountUsdt && newAmountUsdt < 100000 {
+		} else if 30000 <= newAmountUsdt {
 			last = 5
-		} else if 100000 <= newAmountUsdt {
-			last = 6
 		} else {
-			return false, nil, "认购金额不足最低值"
+			fmt.Println("认购金额不足", v)
+			continue
 		}
 
 		if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			if "RAW" == coinType {
-				err = uuc.repo.UpdateUserNewTwoNew(ctx, v.UserId, float64(amount), last, amountRaw, coinType)
-				if nil != err {
-					return err
-				}
-			} else {
-				err = uuc.repo.UpdateUserNewTwoNew(ctx, v.UserId, float64(amount), last, amountKsdt, coinType)
-				if nil != err {
-					return err
-				}
+			err = uuc.repo.UpdateUserNewTwoNew(ctx, v.UserId, amount, float64(amount), last)
+			if nil != err {
+				return err
 			}
 
 			return nil
@@ -2045,167 +2037,52 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 			tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
 		}
 
-		lastLevel := 0
-		lastLevelNum := float64(0)
+		tmpRecommendTotal := 1
 		for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
-			currentLevel := 0
-
 			tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
 			if 0 >= tmpUserId {
 				continue
 			}
 
 			if _, ok := usersMap[tmpUserId]; !ok {
-				fmt.Println("错误分红社区，信息缺失,user：", err, v, tmpUserId)
-				continue
-			}
-
-			if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				// 增加业绩
-				err = uuc.repo.UpdateUserMyTotalAmount(ctx, tmpUserId, float64(amount))
-				if err != nil {
-					fmt.Println("错误分红静态：", err, v)
-				}
-				if 0 < usersMap[tmpUserId].RecommendLevel {
-					var (
-						code int64
-					)
-
-					code, err = uuc.repo.UpdateUserRewardRecommend2(ctx, tmpUserId, v.UserId, usersMap[v.UserId].Address, float64(amount)*recommendLevel)
-					if code > 0 && err != nil {
-						fmt.Println("错误分红特殊：", err)
-					}
-				}
-
-				return nil
-			}); nil != err {
-				fmt.Println(err, "错误投资2", v)
-				continue
-			}
-
-			// 锁定分红的用户，没有社区奖励
-			if 1 == usersMap[v.UserId].LockReward {
+				fmt.Println("buy遍历，信息缺失,user：", err, v, tmpUserId)
 				continue
 			}
 
 			tmpRecommendUser := usersMap[tmpUserId]
-			if nil == tmpRecommendUser {
-				fmt.Println("错误分红社区，信息缺失,user1：", err, v)
+
+			// 增加业绩
+			if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				err = uuc.repo.UpdateUserMyTotalAmount(ctx, tmpUserId, float64(amount))
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}); nil != err {
+				fmt.Println("遍历业绩：", err, v)
 				continue
 			}
 
+			// 我的下级，更新vip
+			userIdsLowTmp := make([]int64, 0)
+			for _, vTmpLow := range myLowUser[tmpUserId] {
+				userIdsLowTmp = append(userIdsLowTmp, vTmpLow.UserId)
+			}
+			if 0 < len(userIdsLowTmp) {
+				uuc.updateVip(ctx, tmpUserId, userIdsLowTmp)
+			}
+
+			// 未入金
 			if 0 >= tmpRecommendUser.AmountUsdt {
 				continue
 			}
 
-			// 我的下级
-			if _, ok := myLowUser[tmpUserId]; !ok {
-				fmt.Println("错误分红社区，信息缺失3：", err, tmpUserId, v)
-				continue
-			}
-
-			if 0 >= len(myLowUser[tmpUserId]) {
-				fmt.Println("错误分红社区，信息缺失3：", err, tmpUserId, v)
-				continue
-			}
-
-			if 1 >= len(myLowUser[tmpUserId]) {
-				continue
-			}
-
-			// 获取业绩
-			tmpAreaMax := float64(0)
-			tmpMaxId := int64(0)
-			for _, vMyLowUser := range myLowUser[tmpUserId] {
-				if _, ok := usersMap[vMyLowUser.UserId]; !ok {
-					fmt.Println("错误分红社区，信息缺失4：", err, tmpUserId, v)
-					continue
-				}
-
-				if tmpAreaMax < usersMap[vMyLowUser.UserId].MyTotalAmount+usersMap[vMyLowUser.UserId].AmountUsdt {
-					tmpAreaMax = usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].AmountUsdt
-					tmpMaxId = vMyLowUser.UserId
-				}
-			}
-
-			if 0 >= tmpMaxId {
-				continue
-			}
-
-			tmpAreaMin := float64(0)
-			for _, vMyLowUser := range myLowUser[tmpUserId] {
-				if tmpMaxId != vMyLowUser.UserId {
-					tmpAreaMin += usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].AmountUsdt
-				}
-			}
-
-			tmpLastLevelNum := float64(0)
-			if 0 < usersMap[tmpUserId].Vip {
-				if 4 <= usersMap[tmpUserId].Vip {
-					if 4 == usersMap[tmpUserId].Vip {
-						currentLevel = 4
-						tmpLastLevelNum = va4
-					} else if 5 == usersMap[tmpUserId].Vip {
-						currentLevel = 5
-						tmpLastLevelNum = va5
-					} else if 6 == usersMap[tmpUserId].Vip {
-						currentLevel = 6
-						tmpLastLevelNum = va6
-					} else if 7 == usersMap[tmpUserId].Vip {
-						currentLevel = 7
-						tmpLastLevelNum = va7
-					} else if 8 == usersMap[tmpUserId].Vip {
-						currentLevel = 8
-						tmpLastLevelNum = va8
-					} else {
-						// 跳过，没级别
-						continue
-					}
-				} else {
-					continue
-				}
-			} else {
-				if 100000 <= tmpAreaMin && 300000 > tmpAreaMin {
-					currentLevel = 4
-					tmpLastLevelNum = va4
-				} else if 300000 <= tmpAreaMin && 1000000 > tmpAreaMin {
-					currentLevel = 5
-					tmpLastLevelNum = va5
-				} else if 1000000 <= tmpAreaMin && 3000000 > tmpAreaMin {
-					currentLevel = 6
-					tmpLastLevelNum = va6
-				} else if 3000000 <= tmpAreaMin && 10000000 > tmpAreaMin {
-					currentLevel = 7
-					tmpLastLevelNum = va7
-				} else if 10000000 <= tmpAreaMin {
-					currentLevel = 8
-					tmpLastLevelNum = va8
-				} else {
-					// 跳过，没级别
-					continue
-				}
-			}
-
-			// 级别低跳过
-			if currentLevel <= lastLevel {
-				if 8 == lastLevel {
-					break
-				}
-
-				continue
-			} else {
-				// 级差
-				if tmpLastLevelNum < lastLevelNum {
-					fmt.Println("错误分红社区，配置，信息缺错误：", err, tmpUserId, v, tmpLastLevelNum, lastLevelNum)
-					continue
-				}
-
-				tmp := float64(amount) * (tmpLastLevelNum - lastLevelNum)
-
+			if 2 >= tmpRecommendTotal {
 				var (
-					stopArea2 bool
-					num       float64
+					num float64
 				)
+
 				if 1 == tmpRecommendUser.Last {
 					num = 1.5
 				} else if 2 == tmpRecommendUser.Last {
@@ -2213,83 +2090,170 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 				} else if 3 == tmpRecommendUser.Last {
 					num = 2
 				} else if 4 == tmpRecommendUser.Last {
-					num = 2.3
+					num = 2.5
 				} else if 5 == tmpRecommendUser.Last {
-					num = 2.6
-				} else if 6 == tmpRecommendUser.Last {
 					num = 3
 				} else {
 					continue
 				}
 
-				fmt.Println("社区开始发奖励：", float64(amount), tmpLastLevelNum, lastLevelNum, tmpRecommendUser, v)
-				if tmp+tmpRecommendUser.AmountUsdtGet >= tmpRecommendUser.AmountUsdt*num {
-					tmp = math.Abs(tmpRecommendUser.AmountUsdt*num - tmpRecommendUser.AmountUsdtGet)
-					stopArea2 = true
+				var (
+					stopRecommend bool
+				)
+				amountRecommendTmp := float64(amount) * recommendOne
+				if 2 == tmpRecommendTotal {
+					amountRecommendTmp = float64(amount) * recommendTwo
 				}
+				if amountRecommendTmp+tmpRecommendUser.AmountUsdtGet >= tmpRecommendUser.AmountUsdt*num {
+					amountRecommendTmp = math.Abs(tmpRecommendUser.AmountUsdt*num - tmpRecommendUser.AmountUsdtGet)
+					stopRecommend = true
+				}
+				amountRecommendTmp = math.Round(amountRecommendTmp*10000000) / 10000000
 
-				tmp = math.Round(tmp*10000000) / 10000000
-				fmt.Println("奖励：", tmp)
-				if tmp > 0 {
+				fmt.Println("直推奖奖励：", float64(amount), amountRecommendTmp, v, tmpRecommendUser)
+				if amountRecommendTmp > 0 {
 					if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 						var (
 							code int64
 						)
-
-						code, err = uuc.repo.UpdateUserRewardAreaTwo(ctx, tmpRecommendUser.ID, tmp, tmpRecommendUser.AmountUsdt, stopArea2, int64(currentLevel), int64(i), usersMap[v.UserId].Address)
+						code, err = uuc.repo.UpdateUserRewardRecommend2(ctx, tmpUserId, amountRecommendTmp, usersMap[tmpUserId].AmountUsdt, stopRecommend, int64(tmpRecommendTotal), int64(i), usersMap[v.UserId].Address)
 						if code > 0 && err != nil {
-							fmt.Println("错误分红社区：", err, tmpRecommendUser)
-						}
-
-						if stopArea2 {
-							stopUserIds[tmpRecommendUser.ID] = true // 出局
-
-							// 推荐人
-							var (
-								userRecommendArea *UserRecommend
-							)
-							if _, ok := userRecommendsMap[tmpRecommendUser.ID]; ok {
-								userRecommendArea = userRecommendsMap[tmpRecommendUser.ID]
-							} else {
-								fmt.Println("错误分红社区，信息缺失7：", err, v)
-							}
-
-							if nil != userRecommendArea && "" != userRecommendArea.RecommendCode {
-								var tmpRecommendAreaUserIds []string
-								tmpRecommendAreaUserIds = strings.Split(userRecommendArea.RecommendCode, "D")
-
-								for _, vTmpRecommendAreaUserIds := range tmpRecommendAreaUserIds {
-									if 0 >= len(vTmpRecommendAreaUserIds) {
-										continue
-									}
-
-									myUserRecommendAreaUserId, _ := strconv.ParseInt(vTmpRecommendAreaUserIds, 10, 64) // 最后一位是直推人
-									if 0 >= myUserRecommendAreaUserId {
-										continue
-									}
-
-									// 减掉业绩
-									err = uuc.repo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.AmountUsdt)
-									if err != nil {
-										fmt.Println("错误分红社区：", err, v)
-									}
-								}
-							}
+							fmt.Println("错误分红特殊：", err)
 						}
 
 						return nil
 					}); nil != err {
 						fmt.Println("err reward area 2", err, v)
 					}
+
+					if stopRecommend {
+						// 推荐人
+						var (
+							userRecommendArea *UserRecommend
+						)
+						if _, ok := userRecommendsMap[tmpRecommendUser.ID]; ok {
+							userRecommendArea = userRecommendsMap[tmpRecommendUser.ID]
+						} else {
+							fmt.Println("错误分红业绩变更，信息缺失7：", err, v)
+							continue
+						}
+
+						if nil != userRecommendArea && "" != userRecommendArea.RecommendCode {
+							var tmpRecommendAreaUserIds []string
+							tmpRecommendAreaUserIds = strings.Split(userRecommendArea.RecommendCode, "D")
+
+							for j := len(tmpRecommendAreaUserIds) - 1; j >= 0; j-- {
+								myUserRecommendAreaUserId, _ := strconv.ParseInt(tmpRecommendAreaUserIds[i], 10, 64) // 最后一位是直推人
+								if 0 >= myUserRecommendAreaUserId {
+									continue
+								}
+								if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { //
+									// 减掉业绩
+									err = uuc.repo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.AmountUsdt)
+									if err != nil {
+										fmt.Println("错误分红社区：", err, v)
+									}
+
+									return nil
+								}); nil != err {
+									fmt.Println("err reward area 2", err, v)
+								}
+
+								// 级别降低
+								// 我的下级，更新vip
+								userIdsLowTmpTwo := make([]int64, 0)
+								for _, vTmpLow := range myLowUser[myUserRecommendAreaUserId] {
+									userIdsLowTmpTwo = append(userIdsLowTmpTwo, vTmpLow.UserId)
+								}
+								if 0 < len(userIdsLowTmpTwo) {
+									uuc.updateVip(ctx, tmpUserId, userIdsLowTmpTwo)
+								}
+							}
+						}
+					}
+
 				}
 
-				lastLevel = currentLevel
-				lastLevelNum = tmpLastLevelNum
+				tmpRecommendTotal++
 			}
 		}
 	}
 
 	return true, nil, ""
+}
+
+func (uuc *UserUseCase) updateVip(ctx context.Context, tmpUserId int64, userIdsLowTmp []int64) {
+	var (
+		err error
+	)
+
+	// 下级的级别
+	var (
+		tmpLowUsers map[int64]*User
+	)
+	tmpLowUsers, err = uuc.repo.GetUserByUserIdsTwo(ctx, userIdsLowTmp)
+	if err != nil {
+		fmt.Println("update vip 遍历业绩2：", err)
+		return
+	}
+
+	vip3 := 0
+	vip2 := 0
+	vip1 := 0
+	// 获取业绩
+	tmpAreaMax := float64(0)
+	tmpAreaMin := float64(0)
+	tmpMaxId := int64(0)
+	for _, vMyLowUser := range tmpLowUsers {
+		if 3 == vMyLowUser.Vip {
+			vip3++
+		} else if 2 == vMyLowUser.Vip {
+			vip2++
+		} else if 1 == vMyLowUser.Vip {
+			vip1++
+		}
+
+		if tmpAreaMax < vMyLowUser.MyTotalAmount+vMyLowUser.AmountUsdt {
+			tmpAreaMax = vMyLowUser.MyTotalAmount + vMyLowUser.AmountUsdt
+			tmpMaxId = vMyLowUser.ID
+		}
+	}
+
+	if 0 < tmpMaxId {
+		for _, vMyLowUser := range tmpLowUsers {
+			if tmpMaxId != vMyLowUser.ID {
+				tmpAreaMin += vMyLowUser.MyTotalAmount + vMyLowUser.AmountUsdt
+			}
+		}
+	}
+
+	tmpVip := int64(0)
+	if 5000000 <= tmpAreaMin && 2 <= vip3 {
+		tmpVip = 5
+	} else if 1500000 <= tmpAreaMin && 2 <= vip3 {
+		tmpVip = 4
+	} else if 500000 <= tmpAreaMin && 2 <= vip2+vip3 {
+		tmpVip = 3
+	} else if 100000 <= tmpAreaMin && 2 <= vip1+vip2+vip3 {
+		tmpVip = 2
+	} else if 30000 <= tmpAreaMin {
+		tmpVip = 1
+	}
+
+	// 增加业绩
+	if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = uuc.repo.UpdateUserVip(ctx, tmpUserId, tmpVip)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}); nil != err {
+		fmt.Println("update vip 遍历业绩 vip：", err)
+		return
+	}
+
+	return
 }
 
 // Exchange Exchange.
