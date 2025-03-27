@@ -262,7 +262,9 @@ func (a *AppService) RewardList(ctx context.Context, req *v1.RewardListRequest) 
 	if claims, ok := jwt.FromContext(ctx); ok {
 		c := claims.(jwt2.MapClaims)
 		if c["UserId"] == nil {
-			return nil, errors.New(500, "ERROR_TOKEN", "无效TOKEN")
+			return &v1.RewardListReply{
+				Status: "无效TOKEN",
+			}, nil
 		}
 		userId = int64(c["UserId"].(float64))
 	}
@@ -304,7 +306,61 @@ func (a *AppService) FeeRewardList(ctx context.Context, req *v1.FeeRewardListReq
 	})
 }
 
+func (a *AppService) SetTodayList(ctx context.Context, req *v1.SetTodayListRequest) (*v1.SetTodayListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var userId int64
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["UserId"] == nil {
+			return &v1.SetTodayListReply{
+				Status: "无效TOKEN",
+			}, nil
+		}
+		userId = int64(c["UserId"].(float64))
+	}
+
+	return a.uuc.SetTodayList(ctx, &biz.User{
+		ID: userId,
+	})
+}
+
 func (a *AppService) WithdrawList(ctx context.Context, req *v1.WithdrawListRequest) (*v1.WithdrawListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var userId int64
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["UserId"] == nil {
+			return &v1.WithdrawListReply{
+				Status: "无效TOKEN",
+			}, nil
+		}
+		userId = int64(c["UserId"].(float64))
+	}
+
+	return a.uuc.WithdrawList(ctx, &biz.User{
+		ID: userId,
+	}, "usdt")
+}
+
+func (a *AppService) OrderList(ctx context.Context, req *v1.OrderListRequest) (*v1.OrderListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var userId int64
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["UserId"] == nil {
+			return &v1.OrderListReply{
+				Status: "无效TOKEN",
+			}, nil
+		}
+		userId = int64(c["UserId"].(float64))
+	}
+
+	return a.uuc.OrderList(ctx, &biz.User{
+		ID: userId,
+	})
+}
+
+func (a *AppService) etTodayList(ctx context.Context, req *v1.WithdrawListRequest) (*v1.WithdrawListReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var userId int64
 	if claims, ok := jwt.FromContext(ctx); ok {
@@ -317,7 +373,7 @@ func (a *AppService) WithdrawList(ctx context.Context, req *v1.WithdrawListReque
 
 	return a.uuc.WithdrawList(ctx, &biz.User{
 		ID: userId,
-	}, req.Type)
+	}, "usdt")
 }
 
 func (a *AppService) TradeList(ctx context.Context, req *v1.TradeListRequest) (*v1.TradeListReply, error) {
@@ -513,7 +569,95 @@ func (a *AppService) Buy(ctx context.Context, req *v1.BuyRequest) (*v1.BuyReply,
 	// TODO 验证签名
 	//password := fmt.Sprintf("%x", md5.Sum([]byte(req.SendBody.Password)))
 
-	return a.uuc.Buy(ctx, req, user)
+	return &v1.BuyReply{
+		Status: "ok",
+	}, nil
+
+	//return a.uuc.Buy(ctx, req, user)
+}
+
+// SetToday  SetToday.
+func (a *AppService) SetToday(ctx context.Context, req *v1.SetTodayRequest) (*v1.SetTodayReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		//err           error
+		userId int64
+	)
+
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["UserId"] == nil {
+			return &v1.SetTodayReply{
+				Status: "无效TOKEN",
+			}, nil
+		}
+		//if c["Password"] == nil {
+		//	return nil, errors.New(403, "ERROR_TOKEN", "无效TOKEN")
+		//}
+		userId = int64(c["UserId"].(float64))
+		//tokenPassword = c["Password"].(string)
+	}
+
+	// 验证
+	var (
+		err error
+	)
+
+	var (
+		user *biz.User
+	)
+	user, err = a.uuc.GetUserByUserId(ctx, userId)
+	if nil != err {
+		return &v1.SetTodayReply{
+			Status: "错误",
+		}, nil
+	}
+
+	if 1 == user.IsDelete {
+		return &v1.SetTodayReply{
+			Status: "用户已删除",
+		}, nil
+	}
+
+	if 1 == user.Lock {
+		return &v1.SetTodayReply{
+			Status: "用户已锁定",
+		}, nil
+	}
+
+	//fmt.Println(user)
+	//res, address, err = verifySig2(req.SendBody.Sign, req.SendBody.PublicKey, "login")
+	//if !res || nil != err || 0 >= len(address) || address != user.Address {
+	//	return nil, errors.New(500, "AUTHORIZE_ERROR", "地址签名错误")
+	//}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	if 10 >= len(req.SendBody.Sign) {
+		return &v1.SetTodayReply{
+			Status: "签名错误",
+		}, nil
+	}
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(user.Address))
+	if !res || addressFromSign != user.Address {
+		return &v1.SetTodayReply{
+			Status: "签名错误",
+		}, nil
+	}
+
+	//if "" == req.SendBody.Password || 6 > len(req.SendBody.Password) {
+	//	return nil, errors.New(500, "AUTHORIZE_ERROR", "账户密码必须大于6位")
+	//}
+	// TODO 验证签名
+	//password := fmt.Sprintf("%x", md5.Sum([]byte(req.SendBody.Password)))
+
+	return &v1.SetTodayReply{
+		Status: "ok",
+	}, nil
+
+	//return a.uuc.Buy(ctx, req, user)
 }
 
 // AmountTo AmountTo.
@@ -836,7 +980,7 @@ func (a *AppService) Withdraw(ctx context.Context, req *v1.WithdrawRequest) (*v1
 	return a.uuc.Withdraw(ctx, req, &biz.User{
 		ID:       userId,
 		Password: tokenPassword,
-	}, "")
+	})
 }
 
 // Tran tran .
@@ -922,92 +1066,7 @@ func (a *AppService) GetTrade(ctx context.Context, req *v1.GetTradeRequest) (*v1
 }
 
 func (a *AppService) Trade(ctx context.Context, req *v1.WithdrawRequest) (*v1.WithdrawReply, error) {
-	// 在上下文 context 中取出 claims 对象
-	var (
-		userId         int64
-		tokenPassword  string
-		amountB        int64
-		tmpValue       int64
-		tmpValue2      int64
-		hbs            float64
-		amountFloatHbs float64
-		amountFloatCsd float64
-		csd            string
-		err            error
-	)
-
-	if claims, ok := jwt.FromContext(ctx); ok {
-		c := claims.(jwt2.MapClaims)
-		if c["UserId"] == nil {
-			return nil, errors.New(500, "ERROR_TOKEN", "无效TOKEN")
-		}
-		if c["Password"] == nil {
-			return nil, errors.New(403, "ERROR_TOKEN", "无效TOKEN")
-		}
-
-		userId = int64(c["UserId"].(float64))
-		tokenPassword = c["Password"].(string)
-	}
-
-	if "" == req.SendBody.Password || 6 > len(req.SendBody.Password) {
-		return nil, errors.New(500, "AUTHORIZE_ERROR", "账户密码必须大于6位")
-	}
-	// TODO 验证签名
-	password := fmt.Sprintf("%x", md5.Sum([]byte(req.SendBody.Password)))
-
-	amountFloat, _ := strconv.ParseFloat(req.SendBody.Amount, 10)
-	amountFloatCsd = amountFloat * 10000000000
-	amount, _ := strconv.ParseInt(strconv.FormatFloat(amountFloatCsd, 'f', -1, 64), 10, 64)
-	if 10000000000 > amount {
-		return &v1.WithdrawReply{
-			Status: "fail",
-		}, nil
-	}
-
-	//if 0 != amount%10 {
-	//	return nil, errors.New(500, "ERROR_TOKEN", "10的整数倍")
-	//}
-
-	csd, err = GetAmountOut(req.SendBody.Amount + "000000000000000000")
-	if nil != err {
-		return nil, errors.New(500, "ERROR_TOKEN", "查询币价错误")
-	}
-	lenValue := len(csd)
-	if 10 > lenValue {
-		return nil, errors.New(500, "ERROR_TOKEN", "币价过低")
-	}
-	tmpValue, _ = strconv.ParseInt(csd[0:lenValue-8], 10, 64)
-	if 0 == tmpValue {
-		return nil, errors.New(500, "ERROR_TOKEN", "币价过低")
-	}
-
-	hbs, err = requestHbsResult()
-	if nil != err {
-		return nil, errors.New(500, "ERROR_TOKEN", "查询币价错误")
-	}
-	amountFloatHbs = amountFloat * 10
-	amountB = int64(amountFloatHbs / hbs * 10000000000)
-	if 0 >= amountB {
-		return nil, errors.New(500, "ERROR_TOKEN", "币价错误")
-	}
-
-	//csdTrade, err = GetAmountOut(strconv.FormatInt((amount+amount*10)/10000000000, 10) + "000000000000000000")
-	//if nil != err {
-	//	return nil, errors.New(500, "ERROR_TOKEN", "查询币价错误")
-	//}
-	//lenCsdTradeValue := len(csdTrade)
-	//if 10 > lenCsdTradeValue {
-	//	return nil, errors.New(500, "ERROR_TOKEN", "币价过低")
-	//}
-	//tmpValue2, _ = strconv.ParseInt(csdTrade[0:lenCsdTradeValue-8], 10, 64)
-	//if 0 == tmpValue2 {
-	//	return nil, errors.New(500, "ERROR_TOKEN", "币价过低")
-	//}
-
-	return a.uuc.Trade(ctx, req, &biz.User{
-		ID:       userId,
-		Password: tokenPassword,
-	}, tmpValue, amountB, tmpValue2, password)
+	return nil, nil
 }
 
 // SetBalanceReward .

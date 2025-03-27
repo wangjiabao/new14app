@@ -30,11 +30,14 @@ const OperationAppEthAuthorize = "/api.App/EthAuthorize"
 const OperationAppExchange = "/api.App/Exchange"
 const OperationAppFeeRewardList = "/api.App/FeeRewardList"
 const OperationAppGetTrade = "/api.App/GetTrade"
+const OperationAppOrderList = "/api.App/OrderList"
 const OperationAppPasswordChange = "/api.App/PasswordChange"
 const OperationAppRecommendRewardList = "/api.App/RecommendRewardList"
 const OperationAppRecommendUpdate = "/api.App/RecommendUpdate"
 const OperationAppRewardList = "/api.App/RewardList"
 const OperationAppSetBalanceReward = "/api.App/SetBalanceReward"
+const OperationAppSetToday = "/api.App/SetToday"
+const OperationAppSetTodayList = "/api.App/SetTodayList"
 const OperationAppStake = "/api.App/Stake"
 const OperationAppTokenWithdraw = "/api.App/TokenWithdraw"
 const OperationAppTrade = "/api.App/Trade"
@@ -85,11 +88,16 @@ type AppHTTPServer interface {
 	Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error)
 	FeeRewardList(context.Context, *FeeRewardListRequest) (*FeeRewardListReply, error)
 	GetTrade(context.Context, *GetTradeRequest) (*GetTradeReply, error)
+	// OrderList  订单
+	OrderList(context.Context, *OrderListRequest) (*OrderListReply, error)
 	PasswordChange(context.Context, *PasswordChangeRequest) (*PasswordChangeReply, error)
 	RecommendRewardList(context.Context, *RecommendRewardListRequest) (*RecommendRewardListReply, error)
 	RecommendUpdate(context.Context, *RecommendUpdateRequest) (*RecommendUpdateReply, error)
+	// RewardList 交易明细
 	RewardList(context.Context, *RewardListRequest) (*RewardListReply, error)
 	SetBalanceReward(context.Context, *SetBalanceRewardRequest) (*SetBalanceRewardReply, error)
+	SetToday(context.Context, *SetTodayRequest) (*SetTodayReply, error)
+	SetTodayList(context.Context, *SetTodayListRequest) (*SetTodayListReply, error)
 	Stake(context.Context, *StakeRequest) (*StakeReply, error)
 	TokenWithdraw(context.Context, *TokenWithdrawRequest) (*TokenWithdrawReply, error)
 	Trade(context.Context, *WithdrawRequest) (*WithdrawReply, error)
@@ -107,18 +115,22 @@ type AppHTTPServer interface {
 func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r := s.Route("/")
 	r.POST("/api/app_server/eth_authorize", _App_EthAuthorize0_HTTP_Handler(srv))
-	r.POST("/api/app_server/recommend_update", _App_RecommendUpdate0_HTTP_Handler(srv))
+	r.GET("/api/app_server/recommend_list", _App_UserRecommend0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_info", _App_UserInfo0_HTTP_Handler(srv))
-	r.GET("/api/app_server/user_area", _App_UserArea0_HTTP_Handler(srv))
+	r.POST("/api/app_server/buy", _App_Buy0_HTTP_Handler(srv))
+	r.POST("/api/app_server/set_today", _App_SetToday0_HTTP_Handler(srv))
+	r.GET("/api/app_server/set_today_list", _App_SetTodayList0_HTTP_Handler(srv))
+	r.POST("/api/app_server/withdraw", _App_Withdraw0_HTTP_Handler(srv))
+	r.GET("/api/app_server/withdraw_list", _App_WithdrawList0_HTTP_Handler(srv))
+	r.GET("/api/app_server/order_list", _App_OrderList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/reward_list", _App_RewardList0_HTTP_Handler(srv))
+	r.POST("/api/app_server/recommend_update", _App_RecommendUpdate0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_area", _App_UserArea0_HTTP_Handler(srv))
 	r.GET("/api/app_server/recommend_reward_list", _App_RecommendRewardList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/fee_reward_list", _App_FeeRewardList0_HTTP_Handler(srv))
-	r.GET("/api/app_server/withdraw_list", _App_WithdrawList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/trade_list", _App_TradeList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/tran_list", _App_TranList0_HTTP_Handler(srv))
-	r.GET("/api/app_server/recommend_list", _App_UserRecommend0_HTTP_Handler(srv))
 	r.POST("/api/app_server/password_change", _App_PasswordChange0_HTTP_Handler(srv))
-	r.POST("/api/app_server/withdraw", _App_Withdraw0_HTTP_Handler(srv))
 	r.POST("/api/app_server/exchange", _App_Exchange0_HTTP_Handler(srv))
 	r.POST("/api/app_server/trade", _App_Trade0_HTTP_Handler(srv))
 	r.POST("/api/app_server/tran", _App_Tran0_HTTP_Handler(srv))
@@ -130,7 +142,6 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.GET("/api/admin_dhb/withdraw_eth", _App_AdminWithdrawEth0_HTTP_Handler(srv))
 	r.GET("/api/admin_dhb/fee", _App_AdminFee0_HTTP_Handler(srv))
 	r.GET("/api/app_server/token_withdraw", _App_TokenWithdraw0_HTTP_Handler(srv))
-	r.POST("/api/app_server/buy", _App_Buy0_HTTP_Handler(srv))
 	r.POST("/api/app_server/amount_to", _App_AmountTo0_HTTP_Handler(srv))
 	r.POST("/api/app_server/stake", _App_Stake0_HTTP_Handler(srv))
 	r.POST("/api/app_server/un_stake", _App_UnStake0_HTTP_Handler(srv))
@@ -158,24 +169,21 @@ func _App_EthAuthorize0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) e
 	}
 }
 
-func _App_RecommendUpdate0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+func _App_UserRecommend0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in RecommendUpdateRequest
-		if err := ctx.Bind(&in.SendBody); err != nil {
-			return err
-		}
+		var in RecommendListRequest
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationAppRecommendUpdate)
+		http.SetOperation(ctx, OperationAppUserRecommend)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.RecommendUpdate(ctx, req.(*RecommendUpdateRequest))
+			return srv.UserRecommend(ctx, req.(*RecommendListRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*RecommendUpdateReply)
+		reply := out.(*RecommendListReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -199,21 +207,125 @@ func _App_UserInfo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error
 	}
 }
 
-func _App_UserArea0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+func _App_Buy0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in UserAreaRequest
+		var in BuyRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationAppUserArea)
+		http.SetOperation(ctx, OperationAppBuy)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.UserArea(ctx, req.(*UserAreaRequest))
+			return srv.Buy(ctx, req.(*BuyRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*UserAreaReply)
+		reply := out.(*BuyReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_SetToday0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetTodayRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppSetToday)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetToday(ctx, req.(*SetTodayRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SetTodayReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_SetTodayList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetTodayListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppSetTodayList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetTodayList(ctx, req.(*SetTodayListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SetTodayListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_Withdraw0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in WithdrawRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppWithdraw)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Withdraw(ctx, req.(*WithdrawRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*WithdrawReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_WithdrawList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in WithdrawListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppWithdrawList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.WithdrawList(ctx, req.(*WithdrawListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*WithdrawListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_OrderList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in OrderListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppOrderList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.OrderList(ctx, req.(*OrderListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*OrderListReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -233,6 +345,47 @@ func _App_RewardList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) err
 			return err
 		}
 		reply := out.(*RewardListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_RecommendUpdate0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RecommendUpdateRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppRecommendUpdate)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RecommendUpdate(ctx, req.(*RecommendUpdateRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RecommendUpdateReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserArea0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserAreaRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserArea)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserArea(ctx, req.(*UserAreaRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserAreaReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -275,25 +428,6 @@ func _App_FeeRewardList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) 
 	}
 }
 
-func _App_WithdrawList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in WithdrawListRequest
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAppWithdrawList)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.WithdrawList(ctx, req.(*WithdrawListRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*WithdrawListReply)
-		return ctx.Result(200, reply)
-	}
-}
-
 func _App_TradeList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in TradeListRequest
@@ -332,25 +466,6 @@ func _App_TranList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error
 	}
 }
 
-func _App_UserRecommend0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in RecommendListRequest
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAppUserRecommend)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.UserRecommend(ctx, req.(*RecommendListRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*RecommendListReply)
-		return ctx.Result(200, reply)
-	}
-}
-
 func _App_PasswordChange0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in PasswordChangeRequest
@@ -369,28 +484,6 @@ func _App_PasswordChange0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context)
 			return err
 		}
 		reply := out.(*PasswordChangeReply)
-		return ctx.Result(200, reply)
-	}
-}
-
-func _App_Withdraw0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in WithdrawRequest
-		if err := ctx.Bind(&in.SendBody); err != nil {
-			return err
-		}
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAppWithdraw)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.Withdraw(ctx, req.(*WithdrawRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*WithdrawReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -622,28 +715,6 @@ func _App_TokenWithdraw0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) 
 	}
 }
 
-func _App_Buy0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in BuyRequest
-		if err := ctx.Bind(&in.SendBody); err != nil {
-			return err
-		}
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAppBuy)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.Buy(ctx, req.(*BuyRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*BuyReply)
-		return ctx.Result(200, reply)
-	}
-}
-
 func _App_AmountTo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in AmountToRequest
@@ -722,11 +793,14 @@ type AppHTTPClient interface {
 	Exchange(ctx context.Context, req *ExchangeRequest, opts ...http.CallOption) (rsp *ExchangeReply, err error)
 	FeeRewardList(ctx context.Context, req *FeeRewardListRequest, opts ...http.CallOption) (rsp *FeeRewardListReply, err error)
 	GetTrade(ctx context.Context, req *GetTradeRequest, opts ...http.CallOption) (rsp *GetTradeReply, err error)
+	OrderList(ctx context.Context, req *OrderListRequest, opts ...http.CallOption) (rsp *OrderListReply, err error)
 	PasswordChange(ctx context.Context, req *PasswordChangeRequest, opts ...http.CallOption) (rsp *PasswordChangeReply, err error)
 	RecommendRewardList(ctx context.Context, req *RecommendRewardListRequest, opts ...http.CallOption) (rsp *RecommendRewardListReply, err error)
 	RecommendUpdate(ctx context.Context, req *RecommendUpdateRequest, opts ...http.CallOption) (rsp *RecommendUpdateReply, err error)
 	RewardList(ctx context.Context, req *RewardListRequest, opts ...http.CallOption) (rsp *RewardListReply, err error)
 	SetBalanceReward(ctx context.Context, req *SetBalanceRewardRequest, opts ...http.CallOption) (rsp *SetBalanceRewardReply, err error)
+	SetToday(ctx context.Context, req *SetTodayRequest, opts ...http.CallOption) (rsp *SetTodayReply, err error)
+	SetTodayList(ctx context.Context, req *SetTodayListRequest, opts ...http.CallOption) (rsp *SetTodayListReply, err error)
 	Stake(ctx context.Context, req *StakeRequest, opts ...http.CallOption) (rsp *StakeReply, err error)
 	TokenWithdraw(ctx context.Context, req *TokenWithdrawRequest, opts ...http.CallOption) (rsp *TokenWithdrawReply, err error)
 	Trade(ctx context.Context, req *WithdrawRequest, opts ...http.CallOption) (rsp *WithdrawReply, err error)
@@ -892,6 +966,19 @@ func (c *AppHTTPClientImpl) GetTrade(ctx context.Context, in *GetTradeRequest, o
 	return &out, err
 }
 
+func (c *AppHTTPClientImpl) OrderList(ctx context.Context, in *OrderListRequest, opts ...http.CallOption) (*OrderListReply, error) {
+	var out OrderListReply
+	pattern := "/api/app_server/order_list"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppOrderList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
 func (c *AppHTTPClientImpl) PasswordChange(ctx context.Context, in *PasswordChangeRequest, opts ...http.CallOption) (*PasswordChangeReply, error) {
 	var out PasswordChangeReply
 	pattern := "/api/app_server/password_change"
@@ -951,6 +1038,32 @@ func (c *AppHTTPClientImpl) SetBalanceReward(ctx context.Context, in *SetBalance
 	opts = append(opts, http.Operation(OperationAppSetBalanceReward))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) SetToday(ctx context.Context, in *SetTodayRequest, opts ...http.CallOption) (*SetTodayReply, error) {
+	var out SetTodayReply
+	pattern := "/api/app_server/set_today"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAppSetToday))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) SetTodayList(ctx context.Context, in *SetTodayListRequest, opts ...http.CallOption) (*SetTodayListReply, error) {
+	var out SetTodayListReply
+	pattern := "/api/app_server/set_today_list"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppSetTodayList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

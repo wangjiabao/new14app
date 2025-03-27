@@ -20,18 +20,22 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	App_EthAuthorize_FullMethodName        = "/api.App/EthAuthorize"
-	App_RecommendUpdate_FullMethodName     = "/api.App/RecommendUpdate"
+	App_UserRecommend_FullMethodName       = "/api.App/UserRecommend"
 	App_UserInfo_FullMethodName            = "/api.App/UserInfo"
-	App_UserArea_FullMethodName            = "/api.App/UserArea"
+	App_Buy_FullMethodName                 = "/api.App/Buy"
+	App_SetToday_FullMethodName            = "/api.App/SetToday"
+	App_SetTodayList_FullMethodName        = "/api.App/SetTodayList"
+	App_Withdraw_FullMethodName            = "/api.App/Withdraw"
+	App_WithdrawList_FullMethodName        = "/api.App/WithdrawList"
+	App_OrderList_FullMethodName           = "/api.App/OrderList"
 	App_RewardList_FullMethodName          = "/api.App/RewardList"
+	App_RecommendUpdate_FullMethodName     = "/api.App/RecommendUpdate"
+	App_UserArea_FullMethodName            = "/api.App/UserArea"
 	App_RecommendRewardList_FullMethodName = "/api.App/RecommendRewardList"
 	App_FeeRewardList_FullMethodName       = "/api.App/FeeRewardList"
-	App_WithdrawList_FullMethodName        = "/api.App/WithdrawList"
 	App_TradeList_FullMethodName           = "/api.App/TradeList"
 	App_TranList_FullMethodName            = "/api.App/TranList"
-	App_UserRecommend_FullMethodName       = "/api.App/UserRecommend"
 	App_PasswordChange_FullMethodName      = "/api.App/PasswordChange"
-	App_Withdraw_FullMethodName            = "/api.App/Withdraw"
 	App_Exchange_FullMethodName            = "/api.App/Exchange"
 	App_Trade_FullMethodName               = "/api.App/Trade"
 	App_Tran_FullMethodName                = "/api.App/Tran"
@@ -43,7 +47,6 @@ const (
 	App_AdminWithdrawEth_FullMethodName    = "/api.App/AdminWithdrawEth"
 	App_AdminFee_FullMethodName            = "/api.App/AdminFee"
 	App_TokenWithdraw_FullMethodName       = "/api.App/TokenWithdraw"
-	App_Buy_FullMethodName                 = "/api.App/Buy"
 	App_AmountTo_FullMethodName            = "/api.App/AmountTo"
 	App_Stake_FullMethodName               = "/api.App/Stake"
 	App_UnStake_FullMethodName             = "/api.App/UnStake"
@@ -54,18 +57,24 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AppClient interface {
 	EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...grpc.CallOption) (*EthAuthorizeReply, error)
-	RecommendUpdate(ctx context.Context, in *RecommendUpdateRequest, opts ...grpc.CallOption) (*RecommendUpdateReply, error)
+	UserRecommend(ctx context.Context, in *RecommendListRequest, opts ...grpc.CallOption) (*RecommendListReply, error)
 	UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoReply, error)
-	UserArea(ctx context.Context, in *UserAreaRequest, opts ...grpc.CallOption) (*UserAreaReply, error)
+	Buy(ctx context.Context, in *BuyRequest, opts ...grpc.CallOption) (*BuyReply, error)
+	SetToday(ctx context.Context, in *SetTodayRequest, opts ...grpc.CallOption) (*SetTodayReply, error)
+	SetTodayList(ctx context.Context, in *SetTodayListRequest, opts ...grpc.CallOption) (*SetTodayListReply, error)
+	Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error)
+	WithdrawList(ctx context.Context, in *WithdrawListRequest, opts ...grpc.CallOption) (*WithdrawListReply, error)
+	// 订单
+	OrderList(ctx context.Context, in *OrderListRequest, opts ...grpc.CallOption) (*OrderListReply, error)
+	// 交易明细
 	RewardList(ctx context.Context, in *RewardListRequest, opts ...grpc.CallOption) (*RewardListReply, error)
+	RecommendUpdate(ctx context.Context, in *RecommendUpdateRequest, opts ...grpc.CallOption) (*RecommendUpdateReply, error)
+	UserArea(ctx context.Context, in *UserAreaRequest, opts ...grpc.CallOption) (*UserAreaReply, error)
 	RecommendRewardList(ctx context.Context, in *RecommendRewardListRequest, opts ...grpc.CallOption) (*RecommendRewardListReply, error)
 	FeeRewardList(ctx context.Context, in *FeeRewardListRequest, opts ...grpc.CallOption) (*FeeRewardListReply, error)
-	WithdrawList(ctx context.Context, in *WithdrawListRequest, opts ...grpc.CallOption) (*WithdrawListReply, error)
 	TradeList(ctx context.Context, in *TradeListRequest, opts ...grpc.CallOption) (*TradeListReply, error)
 	TranList(ctx context.Context, in *TranListRequest, opts ...grpc.CallOption) (*TranListReply, error)
-	UserRecommend(ctx context.Context, in *RecommendListRequest, opts ...grpc.CallOption) (*RecommendListReply, error)
 	PasswordChange(ctx context.Context, in *PasswordChangeRequest, opts ...grpc.CallOption) (*PasswordChangeReply, error)
-	Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error)
 	Exchange(ctx context.Context, in *ExchangeRequest, opts ...grpc.CallOption) (*ExchangeReply, error)
 	Trade(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error)
 	Tran(ctx context.Context, in *TranRequest, opts ...grpc.CallOption) (*TranReply, error)
@@ -100,7 +109,6 @@ type AppClient interface {
 	AdminWithdrawEth(ctx context.Context, in *AdminWithdrawEthRequest, opts ...grpc.CallOption) (*AdminWithdrawEthReply, error)
 	AdminFee(ctx context.Context, in *AdminFeeRequest, opts ...grpc.CallOption) (*AdminFeeReply, error)
 	TokenWithdraw(ctx context.Context, in *TokenWithdrawRequest, opts ...grpc.CallOption) (*TokenWithdrawReply, error)
-	Buy(ctx context.Context, in *BuyRequest, opts ...grpc.CallOption) (*BuyReply, error)
 	AmountTo(ctx context.Context, in *AmountToRequest, opts ...grpc.CallOption) (*AmountToReply, error)
 	Stake(ctx context.Context, in *StakeRequest, opts ...grpc.CallOption) (*StakeReply, error)
 	UnStake(ctx context.Context, in *UnStakeRequest, opts ...grpc.CallOption) (*UnStakeReply, error)
@@ -123,9 +131,9 @@ func (c *appClient) EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, o
 	return out, nil
 }
 
-func (c *appClient) RecommendUpdate(ctx context.Context, in *RecommendUpdateRequest, opts ...grpc.CallOption) (*RecommendUpdateReply, error) {
-	out := new(RecommendUpdateReply)
-	err := c.cc.Invoke(ctx, App_RecommendUpdate_FullMethodName, in, out, opts...)
+func (c *appClient) UserRecommend(ctx context.Context, in *RecommendListRequest, opts ...grpc.CallOption) (*RecommendListReply, error) {
+	out := new(RecommendListReply)
+	err := c.cc.Invoke(ctx, App_UserRecommend_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,9 +149,54 @@ func (c *appClient) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...g
 	return out, nil
 }
 
-func (c *appClient) UserArea(ctx context.Context, in *UserAreaRequest, opts ...grpc.CallOption) (*UserAreaReply, error) {
-	out := new(UserAreaReply)
-	err := c.cc.Invoke(ctx, App_UserArea_FullMethodName, in, out, opts...)
+func (c *appClient) Buy(ctx context.Context, in *BuyRequest, opts ...grpc.CallOption) (*BuyReply, error) {
+	out := new(BuyReply)
+	err := c.cc.Invoke(ctx, App_Buy_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) SetToday(ctx context.Context, in *SetTodayRequest, opts ...grpc.CallOption) (*SetTodayReply, error) {
+	out := new(SetTodayReply)
+	err := c.cc.Invoke(ctx, App_SetToday_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) SetTodayList(ctx context.Context, in *SetTodayListRequest, opts ...grpc.CallOption) (*SetTodayListReply, error) {
+	out := new(SetTodayListReply)
+	err := c.cc.Invoke(ctx, App_SetTodayList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error) {
+	out := new(WithdrawReply)
+	err := c.cc.Invoke(ctx, App_Withdraw_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) WithdrawList(ctx context.Context, in *WithdrawListRequest, opts ...grpc.CallOption) (*WithdrawListReply, error) {
+	out := new(WithdrawListReply)
+	err := c.cc.Invoke(ctx, App_WithdrawList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) OrderList(ctx context.Context, in *OrderListRequest, opts ...grpc.CallOption) (*OrderListReply, error) {
+	out := new(OrderListReply)
+	err := c.cc.Invoke(ctx, App_OrderList_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +206,24 @@ func (c *appClient) UserArea(ctx context.Context, in *UserAreaRequest, opts ...g
 func (c *appClient) RewardList(ctx context.Context, in *RewardListRequest, opts ...grpc.CallOption) (*RewardListReply, error) {
 	out := new(RewardListReply)
 	err := c.cc.Invoke(ctx, App_RewardList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) RecommendUpdate(ctx context.Context, in *RecommendUpdateRequest, opts ...grpc.CallOption) (*RecommendUpdateReply, error) {
+	out := new(RecommendUpdateReply)
+	err := c.cc.Invoke(ctx, App_RecommendUpdate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserArea(ctx context.Context, in *UserAreaRequest, opts ...grpc.CallOption) (*UserAreaReply, error) {
+	out := new(UserAreaReply)
+	err := c.cc.Invoke(ctx, App_UserArea_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,15 +248,6 @@ func (c *appClient) FeeRewardList(ctx context.Context, in *FeeRewardListRequest,
 	return out, nil
 }
 
-func (c *appClient) WithdrawList(ctx context.Context, in *WithdrawListRequest, opts ...grpc.CallOption) (*WithdrawListReply, error) {
-	out := new(WithdrawListReply)
-	err := c.cc.Invoke(ctx, App_WithdrawList_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *appClient) TradeList(ctx context.Context, in *TradeListRequest, opts ...grpc.CallOption) (*TradeListReply, error) {
 	out := new(TradeListReply)
 	err := c.cc.Invoke(ctx, App_TradeList_FullMethodName, in, out, opts...)
@@ -204,27 +266,9 @@ func (c *appClient) TranList(ctx context.Context, in *TranListRequest, opts ...g
 	return out, nil
 }
 
-func (c *appClient) UserRecommend(ctx context.Context, in *RecommendListRequest, opts ...grpc.CallOption) (*RecommendListReply, error) {
-	out := new(RecommendListReply)
-	err := c.cc.Invoke(ctx, App_UserRecommend_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *appClient) PasswordChange(ctx context.Context, in *PasswordChangeRequest, opts ...grpc.CallOption) (*PasswordChangeReply, error) {
 	out := new(PasswordChangeReply)
 	err := c.cc.Invoke(ctx, App_PasswordChange_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *appClient) Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error) {
-	out := new(WithdrawReply)
-	err := c.cc.Invoke(ctx, App_Withdraw_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -330,15 +374,6 @@ func (c *appClient) TokenWithdraw(ctx context.Context, in *TokenWithdrawRequest,
 	return out, nil
 }
 
-func (c *appClient) Buy(ctx context.Context, in *BuyRequest, opts ...grpc.CallOption) (*BuyReply, error) {
-	out := new(BuyReply)
-	err := c.cc.Invoke(ctx, App_Buy_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *appClient) AmountTo(ctx context.Context, in *AmountToRequest, opts ...grpc.CallOption) (*AmountToReply, error) {
 	out := new(AmountToReply)
 	err := c.cc.Invoke(ctx, App_AmountTo_FullMethodName, in, out, opts...)
@@ -371,18 +406,24 @@ func (c *appClient) UnStake(ctx context.Context, in *UnStakeRequest, opts ...grp
 // for forward compatibility
 type AppServer interface {
 	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
-	RecommendUpdate(context.Context, *RecommendUpdateRequest) (*RecommendUpdateReply, error)
+	UserRecommend(context.Context, *RecommendListRequest) (*RecommendListReply, error)
 	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
-	UserArea(context.Context, *UserAreaRequest) (*UserAreaReply, error)
+	Buy(context.Context, *BuyRequest) (*BuyReply, error)
+	SetToday(context.Context, *SetTodayRequest) (*SetTodayReply, error)
+	SetTodayList(context.Context, *SetTodayListRequest) (*SetTodayListReply, error)
+	Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error)
+	WithdrawList(context.Context, *WithdrawListRequest) (*WithdrawListReply, error)
+	// 订单
+	OrderList(context.Context, *OrderListRequest) (*OrderListReply, error)
+	// 交易明细
 	RewardList(context.Context, *RewardListRequest) (*RewardListReply, error)
+	RecommendUpdate(context.Context, *RecommendUpdateRequest) (*RecommendUpdateReply, error)
+	UserArea(context.Context, *UserAreaRequest) (*UserAreaReply, error)
 	RecommendRewardList(context.Context, *RecommendRewardListRequest) (*RecommendRewardListReply, error)
 	FeeRewardList(context.Context, *FeeRewardListRequest) (*FeeRewardListReply, error)
-	WithdrawList(context.Context, *WithdrawListRequest) (*WithdrawListReply, error)
 	TradeList(context.Context, *TradeListRequest) (*TradeListReply, error)
 	TranList(context.Context, *TranListRequest) (*TranListReply, error)
-	UserRecommend(context.Context, *RecommendListRequest) (*RecommendListReply, error)
 	PasswordChange(context.Context, *PasswordChangeRequest) (*PasswordChangeReply, error)
-	Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error)
 	Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error)
 	Trade(context.Context, *WithdrawRequest) (*WithdrawReply, error)
 	Tran(context.Context, *TranRequest) (*TranReply, error)
@@ -417,7 +458,6 @@ type AppServer interface {
 	AdminWithdrawEth(context.Context, *AdminWithdrawEthRequest) (*AdminWithdrawEthReply, error)
 	AdminFee(context.Context, *AdminFeeRequest) (*AdminFeeReply, error)
 	TokenWithdraw(context.Context, *TokenWithdrawRequest) (*TokenWithdrawReply, error)
-	Buy(context.Context, *BuyRequest) (*BuyReply, error)
 	AmountTo(context.Context, *AmountToRequest) (*AmountToReply, error)
 	Stake(context.Context, *StakeRequest) (*StakeReply, error)
 	UnStake(context.Context, *UnStakeRequest) (*UnStakeReply, error)
@@ -431,17 +471,38 @@ type UnimplementedAppServer struct {
 func (UnimplementedAppServer) EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EthAuthorize not implemented")
 }
-func (UnimplementedAppServer) RecommendUpdate(context.Context, *RecommendUpdateRequest) (*RecommendUpdateReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RecommendUpdate not implemented")
+func (UnimplementedAppServer) UserRecommend(context.Context, *RecommendListRequest) (*RecommendListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserRecommend not implemented")
 }
 func (UnimplementedAppServer) UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserInfo not implemented")
 }
-func (UnimplementedAppServer) UserArea(context.Context, *UserAreaRequest) (*UserAreaReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserArea not implemented")
+func (UnimplementedAppServer) Buy(context.Context, *BuyRequest) (*BuyReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Buy not implemented")
+}
+func (UnimplementedAppServer) SetToday(context.Context, *SetTodayRequest) (*SetTodayReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetToday not implemented")
+}
+func (UnimplementedAppServer) SetTodayList(context.Context, *SetTodayListRequest) (*SetTodayListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetTodayList not implemented")
+}
+func (UnimplementedAppServer) Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Withdraw not implemented")
+}
+func (UnimplementedAppServer) WithdrawList(context.Context, *WithdrawListRequest) (*WithdrawListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method WithdrawList not implemented")
+}
+func (UnimplementedAppServer) OrderList(context.Context, *OrderListRequest) (*OrderListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OrderList not implemented")
 }
 func (UnimplementedAppServer) RewardList(context.Context, *RewardListRequest) (*RewardListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RewardList not implemented")
+}
+func (UnimplementedAppServer) RecommendUpdate(context.Context, *RecommendUpdateRequest) (*RecommendUpdateReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecommendUpdate not implemented")
+}
+func (UnimplementedAppServer) UserArea(context.Context, *UserAreaRequest) (*UserAreaReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserArea not implemented")
 }
 func (UnimplementedAppServer) RecommendRewardList(context.Context, *RecommendRewardListRequest) (*RecommendRewardListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecommendRewardList not implemented")
@@ -449,23 +510,14 @@ func (UnimplementedAppServer) RecommendRewardList(context.Context, *RecommendRew
 func (UnimplementedAppServer) FeeRewardList(context.Context, *FeeRewardListRequest) (*FeeRewardListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FeeRewardList not implemented")
 }
-func (UnimplementedAppServer) WithdrawList(context.Context, *WithdrawListRequest) (*WithdrawListReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method WithdrawList not implemented")
-}
 func (UnimplementedAppServer) TradeList(context.Context, *TradeListRequest) (*TradeListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TradeList not implemented")
 }
 func (UnimplementedAppServer) TranList(context.Context, *TranListRequest) (*TranListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TranList not implemented")
 }
-func (UnimplementedAppServer) UserRecommend(context.Context, *RecommendListRequest) (*RecommendListReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserRecommend not implemented")
-}
 func (UnimplementedAppServer) PasswordChange(context.Context, *PasswordChangeRequest) (*PasswordChangeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PasswordChange not implemented")
-}
-func (UnimplementedAppServer) Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Withdraw not implemented")
 }
 func (UnimplementedAppServer) Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Exchange not implemented")
@@ -499,9 +551,6 @@ func (UnimplementedAppServer) AdminFee(context.Context, *AdminFeeRequest) (*Admi
 }
 func (UnimplementedAppServer) TokenWithdraw(context.Context, *TokenWithdrawRequest) (*TokenWithdrawReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TokenWithdraw not implemented")
-}
-func (UnimplementedAppServer) Buy(context.Context, *BuyRequest) (*BuyReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Buy not implemented")
 }
 func (UnimplementedAppServer) AmountTo(context.Context, *AmountToRequest) (*AmountToReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AmountTo not implemented")
@@ -543,20 +592,20 @@ func _App_EthAuthorize_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _App_RecommendUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RecommendUpdateRequest)
+func _App_UserRecommend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecommendListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AppServer).RecommendUpdate(ctx, in)
+		return srv.(AppServer).UserRecommend(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: App_RecommendUpdate_FullMethodName,
+		FullMethod: App_UserRecommend_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).RecommendUpdate(ctx, req.(*RecommendUpdateRequest))
+		return srv.(AppServer).UserRecommend(ctx, req.(*RecommendListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -579,20 +628,110 @@ func _App_UserInfo_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _App_UserArea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserAreaRequest)
+func _App_Buy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BuyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AppServer).UserArea(ctx, in)
+		return srv.(AppServer).Buy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: App_UserArea_FullMethodName,
+		FullMethod: App_Buy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).UserArea(ctx, req.(*UserAreaRequest))
+		return srv.(AppServer).Buy(ctx, req.(*BuyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_SetToday_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetTodayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).SetToday(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_SetToday_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).SetToday(ctx, req.(*SetTodayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_SetTodayList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetTodayListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).SetTodayList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_SetTodayList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).SetTodayList(ctx, req.(*SetTodayListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_Withdraw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WithdrawRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).Withdraw(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_Withdraw_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).Withdraw(ctx, req.(*WithdrawRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_WithdrawList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WithdrawListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).WithdrawList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_WithdrawList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).WithdrawList(ctx, req.(*WithdrawListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_OrderList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OrderListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).OrderList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_OrderList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).OrderList(ctx, req.(*OrderListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -611,6 +750,42 @@ func _App_RewardList_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).RewardList(ctx, req.(*RewardListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_RecommendUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecommendUpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).RecommendUpdate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_RecommendUpdate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).RecommendUpdate(ctx, req.(*RecommendUpdateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserArea_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserAreaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserArea(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserArea_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserArea(ctx, req.(*UserAreaRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -651,24 +826,6 @@ func _App_FeeRewardList_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _App_WithdrawList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WithdrawListRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AppServer).WithdrawList(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: App_WithdrawList_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).WithdrawList(ctx, req.(*WithdrawListRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _App_TradeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TradeListRequest)
 	if err := dec(in); err != nil {
@@ -705,24 +862,6 @@ func _App_TranList_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _App_UserRecommend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RecommendListRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AppServer).UserRecommend(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: App_UserRecommend_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).UserRecommend(ctx, req.(*RecommendListRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _App_PasswordChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PasswordChangeRequest)
 	if err := dec(in); err != nil {
@@ -737,24 +876,6 @@ func _App_PasswordChange_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).PasswordChange(ctx, req.(*PasswordChangeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _App_Withdraw_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WithdrawRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AppServer).Withdraw(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: App_Withdraw_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).Withdraw(ctx, req.(*WithdrawRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -957,24 +1078,6 @@ func _App_TokenWithdraw_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _App_Buy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BuyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AppServer).Buy(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: App_Buy_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).Buy(ctx, req.(*BuyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _App_AmountTo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AmountToRequest)
 	if err := dec(in); err != nil {
@@ -1041,20 +1144,48 @@ var App_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _App_EthAuthorize_Handler,
 		},
 		{
-			MethodName: "RecommendUpdate",
-			Handler:    _App_RecommendUpdate_Handler,
+			MethodName: "UserRecommend",
+			Handler:    _App_UserRecommend_Handler,
 		},
 		{
 			MethodName: "UserInfo",
 			Handler:    _App_UserInfo_Handler,
 		},
 		{
-			MethodName: "UserArea",
-			Handler:    _App_UserArea_Handler,
+			MethodName: "Buy",
+			Handler:    _App_Buy_Handler,
+		},
+		{
+			MethodName: "SetToday",
+			Handler:    _App_SetToday_Handler,
+		},
+		{
+			MethodName: "SetTodayList",
+			Handler:    _App_SetTodayList_Handler,
+		},
+		{
+			MethodName: "Withdraw",
+			Handler:    _App_Withdraw_Handler,
+		},
+		{
+			MethodName: "WithdrawList",
+			Handler:    _App_WithdrawList_Handler,
+		},
+		{
+			MethodName: "OrderList",
+			Handler:    _App_OrderList_Handler,
 		},
 		{
 			MethodName: "RewardList",
 			Handler:    _App_RewardList_Handler,
+		},
+		{
+			MethodName: "RecommendUpdate",
+			Handler:    _App_RecommendUpdate_Handler,
+		},
+		{
+			MethodName: "UserArea",
+			Handler:    _App_UserArea_Handler,
 		},
 		{
 			MethodName: "RecommendRewardList",
@@ -1065,10 +1196,6 @@ var App_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _App_FeeRewardList_Handler,
 		},
 		{
-			MethodName: "WithdrawList",
-			Handler:    _App_WithdrawList_Handler,
-		},
-		{
 			MethodName: "TradeList",
 			Handler:    _App_TradeList_Handler,
 		},
@@ -1077,16 +1204,8 @@ var App_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _App_TranList_Handler,
 		},
 		{
-			MethodName: "UserRecommend",
-			Handler:    _App_UserRecommend_Handler,
-		},
-		{
 			MethodName: "PasswordChange",
 			Handler:    _App_PasswordChange_Handler,
-		},
-		{
-			MethodName: "Withdraw",
-			Handler:    _App_Withdraw_Handler,
 		},
 		{
 			MethodName: "Exchange",
@@ -1131,10 +1250,6 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TokenWithdraw",
 			Handler:    _App_TokenWithdraw_Handler,
-		},
-		{
-			MethodName: "Buy",
-			Handler:    _App_Buy_Handler,
 		},
 		{
 			MethodName: "AmountTo",
