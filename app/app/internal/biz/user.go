@@ -33,6 +33,7 @@ type User struct {
 	RecommendLevel         int64
 	Out                    int64
 	Vip                    int64
+	VipAdmin               int64
 	LockReward             int64
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
@@ -41,6 +42,13 @@ type User struct {
 	MyTotalAmount          float64
 	AmountUsdtGet          float64
 	AmountRecommendUsdtGet float64
+}
+
+type Total struct {
+	ID    int64
+	One   float64
+	Two   float64
+	Three float64
 }
 
 type UserInfo struct {
@@ -249,6 +257,7 @@ type ConfigRepo interface {
 }
 
 type UserBalanceRepo interface {
+	GetTotal(ctx context.Context) (*Total, error)
 	RecommendLocationRewardBiw(ctx context.Context, userId int64, rewardAmount int64, recommendNum int64, stop string, tmpMaxNew int64, feeRate int64) (int64, error)
 	CreateUserBalance(ctx context.Context, u *User) (*UserBalance, error)
 	CreateUserBalanceLock(ctx context.Context, u *User) (*UserBalance, error)
@@ -269,6 +278,7 @@ type UserBalanceRepo interface {
 	GetUserBalance(ctx context.Context, userId int64) (*UserBalance, error)
 	GetRewardFourYes(ctx context.Context) (*Reward, error)
 	GetUserRewardByUserId(ctx context.Context, userId int64) ([]*Reward, error)
+	GetUserRewardByUserIdPage(ctx context.Context, b *Pagination, userId int64, reason string) ([]*Reward, error, int64)
 	GetUserRewardDeposit(ctx context.Context, userId int64) ([]*Reward, error)
 	GetLocationsToday(ctx context.Context) ([]*LocationNew, error)
 	GetUserRewardByUserIds(ctx context.Context, userIds ...int64) (map[int64]*UserSortRecommendReward, error)
@@ -590,10 +600,12 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		inviteUserAddress     string
 		myRecommendUser       *User
 		configs               []*Config
-		//userBalance           *UserBalance
-		bPrice      float64
-		withdrawMin float64
-		withdrawMax float64
+		userBalance           *UserBalance
+		bPrice                float64
+		withdrawMin           float64
+		withdrawMax           float64
+		allOne                float64
+		allTwo                float64
 		//users                 []*User
 	)
 
@@ -601,7 +613,7 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 	configs, err = uuc.configRepo.GetConfigByKeys(ctx,
 		"b_price",
 		"withdraw_amount_max",
-		"withdraw_amount_min",
+		"withdraw_amount_min", "all_one", "all_two",
 	)
 	if nil != configs {
 		for _, vConfig := range configs {
@@ -613,6 +625,11 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 			}
 			if "b_price" == vConfig.KeyName {
 				bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+			}
+			if "all_one" == vConfig.KeyName {
+				allOne, _ = strconv.ParseFloat(vConfig.Value, 10)
+			} else if "all_two" == vConfig.KeyName {
+				allTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
 			}
 		}
 	}
@@ -637,11 +654,11 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		return nil, nil
 	}
 
-	//// 余额，收益总数
-	//userBalance, err = uuc.ubRepo.GetUserBalance(ctx, myUser.ID)
-	//if nil != err {
-	//	return nil, err
-	//}
+	// 余额，收益总数
+	userBalance, err = uuc.ubRepo.GetUserBalance(ctx, myUser.ID)
+	if nil != err {
+		return nil, err
+	}
 
 	//var (
 	//	userYesExchange []*UserBalanceRecord
@@ -973,18 +990,47 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 	//	currentLevel = uint64(myUser.Vip)
 	//}
 
+	four := float64(0)
+	if 1 == myUser.Last {
+		four = 1.5*user.AmountUsdt - user.AmountUsdt
+	} else if 2 == myUser.Last {
+		four = 1.8*user.AmountUsdt - user.AmountUsdt
+	} else if 3 == myUser.Last {
+		four = 2*user.AmountUsdt - user.AmountUsdt
+	} else if 4 == myUser.Last {
+		four = 2.5*user.AmountUsdt - user.AmountUsdt
+	} else if 5 == myUser.Last {
+		four = 3*user.AmountUsdt - user.AmountUsdt
+	}
+
+	tmpVip := uint64(0)
+	if 0 < myUser.VipAdmin {
+		tmpVip = uint64(myUser.VipAdmin)
+	} else {
+		tmpVip = uint64(myUser.Vip)
+	}
+
+	var (
+		total *Total
+	)
+	total, err = uuc.ubRepo.GetTotal(ctx)
+	if nil == total {
+		fmt.Println("今日分红错误用户获取失败，total")
+		return nil, nil
+	}
+
 	return &v1.UserInfoReply{
 		Status:            "ok",
-		One:               0,
-		Two:               0,
-		Three:             0,
-		Four:              0,
+		One:               userBalance.BalanceUsdtFloat,
+		Two:               float64(user.Amount),
+		Three:             user.AmountUsdt,
+		Four:              four,
 		MyAddress:         myUser.Address,
 		InviteUserAddress: inviteUserAddress,
-		Level:             0,
+		Level:             tmpVip,
 		Price:             bPrice,
-		Five:              0,
-		Six:               0,
+		Five:              total.One * allOne,
+		Six:               total.One * allTwo,
 		Seven:             0,
 		WithdrawMin:       withdrawMin,
 		WithdrawMax:       withdrawMax,
@@ -1468,13 +1514,54 @@ func (uuc *UserUseCase) UserInfoOld(ctx context.Context, user *User) (*v1.UserIn
 
 func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListRequest, user *User) (*v1.RewardListReply, error) {
 	res := make([]*v1.RewardListReply_List, 0)
-	res = append(res, &v1.RewardListReply_List{
-		CreatedAt: "2006-01-02 15:04:05",
-		Amount:    100,
-	}, &v1.RewardListReply_List{
-		CreatedAt: "2006-01-03 15:04:05",
-		Amount:    100,
-	})
+
+	var (
+		userRewards []*Reward
+		count       int64
+		reason      string
+		err         error
+	)
+
+	if 1 == req.ReqType {
+		reason = "deposit"
+	} else if 2 == req.ReqType {
+		reason = "recommend"
+	} else if 3 == req.ReqType {
+		reason = "recommend_two"
+	} else if 4 == req.ReqType {
+		reason = "recommend_b"
+	} else if 5 == req.ReqType {
+		reason = "area"
+	} else if 6 == req.ReqType {
+		reason = "total_one"
+	} else if 7 == req.ReqType {
+		reason = "total_two"
+	} else {
+		return &v1.RewardListReply{
+			Status: "ok",
+			Count:  uint64(count),
+			List:   res,
+		}, err
+	}
+
+	userRewards, err, count = uuc.ubRepo.GetUserRewardByUserIdPage(ctx, &Pagination{
+		PageNum:  int(req.Page),
+		PageSize: 10,
+	}, user.ID, reason)
+	if nil != err {
+		return &v1.RewardListReply{
+			Status: "ok",
+			Count:  uint64(count),
+			List:   res,
+		}, err
+	}
+
+	for _, vUserReward := range userRewards {
+		res = append(res, &v1.RewardListReply_List{
+			CreatedAt: vUserReward.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+			Amount:    vUserReward.AmountNew,
+		})
+	}
 
 	return &v1.RewardListReply{
 		Status: "ok",

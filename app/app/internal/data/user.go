@@ -30,6 +30,7 @@ type User struct {
 	OutRate                int64     `gorm:"type:int;not null"`
 	Lock                   int64     `gorm:"type:int;not null"`
 	Vip                    int64     `gorm:"type:int;not null"`
+	VipAdmin               int64     `gorm:"type:int;not null"`
 	LockReward             int64     `gorm:"type:int;not null"`
 	RecommendLevel         int64     `gorm:"type:int;not null"`
 	AmountUsdt             float64   `gorm:"type:decimal(65,20);not null"`
@@ -37,6 +38,15 @@ type User struct {
 	AmountUsdtGet          float64   `gorm:"type:decimal(65,20);not null"`
 	AmountRecommendUsdtGet float64   `gorm:"type:decimal(65,20);not null"`
 	Last                   uint64    `gorm:"type:bigint;not null"`
+}
+
+type Total struct {
+	ID        int64     `gorm:"primarykey;type:int"`
+	One       float64   `gorm:"type:decimal(65,20);not null"`
+	Two       float64   `gorm:"type:decimal(65,20);not null"`
+	Three     float64   `gorm:"type:decimal(65,20);not null"`
+	CreatedAt time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt time.Time `gorm:"type:datetime;not null"`
 }
 
 type Trade struct {
@@ -807,6 +817,25 @@ func (u *UserRepo) GetUserById(ctx context.Context, Id int64) (*biz.User, error)
 		UpdatedAt:              user.UpdatedAt,
 		Last:                   user.Last,
 		Vip:                    user.Vip,
+		VipAdmin:               user.VipAdmin,
+	}, nil
+}
+
+// GetTotal .
+func (ub *UserBalanceRepo) GetTotal(ctx context.Context) (*biz.Total, error) {
+	var total Total
+	if err := ub.data.db.Table("total").First(&total).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.NotFound("REWARD_NOT_FOUND", "total not found")
+		}
+
+		return nil, errors.New(500, "REWARD ERROR", err.Error())
+	}
+	return &biz.Total{
+		ID:    total.ID,
+		One:   total.One,
+		Two:   total.Two,
+		Three: total.Three,
 	}, nil
 }
 
@@ -3380,6 +3409,47 @@ func (ub *UserBalanceRepo) GetUserRewardDeposit(ctx context.Context, userId int6
 		})
 	}
 	return res, nil
+}
+
+// GetUserRewardByUserIdPage .
+func (ub *UserBalanceRepo) GetUserRewardByUserIdPage(ctx context.Context, b *biz.Pagination, userId int64, reason string) ([]*biz.Reward, error, int64) {
+	var (
+		count   int64
+		rewards []*Reward
+	)
+
+	res := make([]*biz.Reward, 0)
+
+	instance := ub.data.db.Where("user_id", userId).Table("reward").Where("reason=?", reason).Order("id desc")
+	instance = instance.Count(&count)
+
+	if err := instance.Scopes(Paginate(b.PageNum, b.PageSize)).Find(&rewards).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, errors.NotFound("REWARD_NOT_FOUND", "reward not found"), 0
+		}
+
+		return nil, errors.New(500, "REWARD ERROR", err.Error()), 0
+	}
+
+	for _, reward := range rewards {
+		res = append(res, &biz.Reward{
+			ID:               reward.ID,
+			UserId:           reward.UserId,
+			Amount:           reward.Amount,
+			BalanceRecordId:  reward.BalanceRecordId,
+			Type:             reward.Type,
+			TypeRecordId:     reward.TypeRecordId,
+			Reason:           reward.Reason,
+			ReasonLocationId: reward.ReasonLocationId,
+			LocationType:     reward.LocationType,
+			CreatedAt:        reward.CreatedAt,
+			AmountB:          reward.AmountB,
+			AmountNew:        reward.AmountNew,
+			AmountNewTwo:     reward.AmountNewTwo,
+			Address:          reward.Address,
+		})
+	}
+	return res, nil, count
 }
 
 // GetUserRewardByUserId .
