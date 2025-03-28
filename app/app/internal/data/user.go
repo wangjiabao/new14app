@@ -53,13 +53,14 @@ type Trade struct {
 }
 
 type BuyRecord struct {
-	ID        int64     `gorm:"primarykey;type:int"`
-	UserId    int64     `gorm:"type:int;not null"`
-	Status    int64     `gorm:"type:int;not null"`
-	Amount    float64   `gorm:"type:decimal(65,20);not null"`
-	AmountGet float64   `gorm:"type:decimal(65,20);not null"`
-	CreatedAt time.Time `gorm:"type:datetime;not null"`
-	UpdatedAt time.Time `gorm:"type:datetime;not null"`
+	ID          int64     `gorm:"primarykey;type:int"`
+	UserId      int64     `gorm:"type:int;not null"`
+	Status      int64     `gorm:"type:int;not null"`
+	Amount      float64   `gorm:"type:decimal(65,20);not null"`
+	AmountGet   float64   `gorm:"type:decimal(65,20);not null"`
+	LastUpdated int64     `gorm:"type:int;not null"`
+	CreatedAt   time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt   time.Time `gorm:"type:datetime;not null"`
 }
 
 type UserInfo struct {
@@ -595,11 +596,22 @@ func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId int64, amount
 		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 	}
 
+	now := time.Now().UTC()
+	var lasUpdated time.Time
+	if 16 <= now.Hour() {
+		lasUpdated = now.AddDate(0, 0, 1)
+	} else {
+		lasUpdated = now
+	}
+	todayStart := time.Date(lasUpdated.Year(), lasUpdated.Month(), lasUpdated.Day(), 16, 0, 0, 0, time.UTC)
+
 	var buyRecord BuyRecord
 	buyRecord.UserId = userId
 	buyRecord.Amount = amountUsdt
 	buyRecord.AmountGet = 0
 	buyRecord.Status = 1
+	buyRecord.LastUpdated = todayStart.Unix()
+
 	res = u.data.DB(ctx).Table("buy_record").Create(&buyRecord)
 	if res.Error != nil {
 		return errors.New(500, "CREATE_LOCATION_ERROR", "占位信息创建失败")
