@@ -2154,11 +2154,11 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 								tmpRecommendAreaUserIds = strings.Split(userRecommendArea.RecommendCode, "D")
 
 								for j := len(tmpRecommendAreaUserIds) - 1; j >= 0; j-- {
-									if 0 >= len(tmpRecommendAreaUserIds[i]) {
+									if 0 >= len(tmpRecommendAreaUserIds[j]) {
 										continue
 									}
 
-									myUserRecommendAreaUserId, _ := strconv.ParseInt(tmpRecommendAreaUserIds[i], 10, 64) // 最后一位是直推人
+									myUserRecommendAreaUserId, _ := strconv.ParseInt(tmpRecommendAreaUserIds[j], 10, 64) // 最后一位是直推人
 									if 0 >= myUserRecommendAreaUserId {
 										continue
 									}
