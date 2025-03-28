@@ -2082,8 +2082,8 @@ func (ub *UserBalanceRepo) ToAddressAmountRaw(ctx context.Context, userId int64,
 func (ub *UserBalanceRepo) WithdrawUsdt2(ctx context.Context, userId int64, amount float64) error {
 	var err error
 	if res := ub.data.DB(ctx).Table("user_balance").
-		Where("user_id=? and balance_raw_float>=?", userId, amount).
-		Updates(map[string]interface{}{"balance_raw_float": gorm.Expr("balance_raw_float - ?", amount)}); 0 == res.RowsAffected || nil != res.Error {
+		Where("user_id=? and balance_usdt_float>=?", userId, amount).
+		Updates(map[string]interface{}{"balance_usdt_float": gorm.Expr("balance_usdt_float - ?", amount)}); 0 == res.RowsAffected || nil != res.Error {
 		return errors.NotFound("user balance err", "user balance error")
 	}
 
@@ -2097,7 +2097,7 @@ func (ub *UserBalanceRepo) WithdrawUsdt2(ctx context.Context, userId int64, amou
 	userBalanceRecode.Balance = userBalance.BalanceUsdt
 	userBalanceRecode.UserId = userBalance.UserId
 	userBalanceRecode.Type = "withdraw"
-	userBalanceRecode.CoinType = "RAW"
+	userBalanceRecode.CoinType = "USDT"
 	userBalanceRecode.AmountNew = amount
 	err = ub.data.DB(ctx).Table("user_balance_record").Create(&userBalanceRecode).Error
 	if err != nil {
