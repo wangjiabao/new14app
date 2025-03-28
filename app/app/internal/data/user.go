@@ -369,6 +369,31 @@ func (c *ConfigRepo) UpdateConfig(ctx context.Context, id int64, value string) (
 	return true, nil
 }
 
+// UpdateUserMyRecommendTotalNum .
+func (u *UserRepo) UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{
+			"amount_biw": gorm.Expr("amount_biw + ?", 1), // 这里字段用记录直推激活人数，和金额
+		})
+	if res.Error != nil {
+		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// UpdateUserMyRecommendTotal .
+func (u *UserRepo) UpdateUserMyRecommendTotal(ctx context.Context, userId int64, amountUsdt float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{
+			"amount_recommend_usdt_get": gorm.Expr("amount_recommend_usdt_get + ?", amountUsdt)})
+	if res.Error != nil {
+		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // UpdateUserMyTotalAmount .
 func (u *UserRepo) UpdateUserMyTotalAmount(ctx context.Context, userId int64, amountUsdt float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
@@ -462,6 +487,7 @@ func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId int64,
 			return 0, err
 		}
 
+		return userBalanceRecode.ID, nil
 	} else {
 		if err = u.data.DB(ctx).Table("user_balance").
 			Where("user_id=?", userId).
@@ -498,6 +524,8 @@ func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId int64,
 		if err != nil {
 			return 0, err
 		}
+
+		return userBalanceRecode.ID, nil
 	}
 
 	return 0, nil
@@ -594,6 +622,12 @@ func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId int64, amount
 		})
 	if res.Error != nil {
 		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("total").Where("id=?", 1).
+		Updates(map[string]interface{}{"one": gorm.Expr("one + ?", amountUsdt)})
+	if res.Error != nil {
+		return errors.New(500, "UPDATE_USER_ERROR", "one信息修改失败")
 	}
 
 	now := time.Now().UTC()

@@ -361,6 +361,8 @@ type UserRepo interface {
 	InRecordNew(ctx context.Context, userId int64, address string, amount int64, coinType string) error
 	UpdateUserNewTwoNew(ctx context.Context, userId int64, amount uint64, amountUsdt float64, last uint64) error
 	UpdateUserMyTotalAmount(ctx context.Context, userId int64, amountUsdt float64) error
+	UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64) error
+	UpdateUserMyRecommendTotal(ctx context.Context, userId int64, amountUsdt float64) error
 	UpdateUserVip(ctx context.Context, userId int64, vip int64) error
 	UpdateUserRewardRecommend2(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amountUsdt float64) error
@@ -448,6 +450,11 @@ func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *Us
 			}
 
 			_, err = uuc.ubRepo.CreateUserBalance(ctx, user) // 创建余额信息
+			if err != nil {
+				return err
+			}
+
+			err = uuc.repo.UpdateUserMyRecommendTotalNum(ctx, recommendUser.UserId)
 			if err != nil {
 				return err
 			}
@@ -2038,7 +2045,8 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 		}
 
 		tmpRecommendTotal := 1
-		for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+		totalTmp := len(tmpRecommendUserIds) - 1
+		for i := totalTmp; i >= 0; i-- {
 			tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
 			if 0 >= tmpUserId {
 				continue
@@ -2050,6 +2058,20 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 			}
 
 			tmpRecommendUser := usersMap[tmpUserId]
+			if i == totalTmp {
+				// 增加业绩
+				if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+					err = uuc.repo.UpdateUserMyRecommendTotal(ctx, tmpUserId, float64(amount))
+					if err != nil {
+						return err
+					}
+
+					return nil
+				}); nil != err {
+					fmt.Println("遍历业绩：", err, v)
+					continue
+				}
+			}
 
 			// 增加业绩
 			if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
