@@ -2799,6 +2799,7 @@ func (ub *UserBalanceRepo) GetWithdrawByUserId(ctx context.Context, userId int64
 			BalanceRecordId: withdraw.BalanceRecordId,
 			Status:          withdraw.Status,
 			Type:            withdraw.Type,
+			AmountNew:       withdraw.AmountNew,
 			CreatedAt:       withdraw.CreatedAt,
 		})
 	}
