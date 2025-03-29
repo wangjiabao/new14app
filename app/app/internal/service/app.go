@@ -338,7 +338,7 @@ func (a *AppService) WithdrawList(ctx context.Context, req *v1.WithdrawListReque
 		userId = int64(c["UserId"].(float64))
 	}
 
-	return a.uuc.WithdrawList(ctx, &biz.User{
+	return a.uuc.WithdrawList(ctx, req, &biz.User{
 		ID: userId,
 	}, "usdt")
 }
@@ -362,19 +362,7 @@ func (a *AppService) OrderList(ctx context.Context, req *v1.OrderListRequest) (*
 }
 
 func (a *AppService) etTodayList(ctx context.Context, req *v1.WithdrawListRequest) (*v1.WithdrawListReply, error) {
-	// 在上下文 context 中取出 claims 对象
-	var userId int64
-	if claims, ok := jwt.FromContext(ctx); ok {
-		c := claims.(jwt2.MapClaims)
-		if c["UserId"] == nil {
-			return nil, errors.New(500, "ERROR_TOKEN", "无效TOKEN")
-		}
-		userId = int64(c["UserId"].(float64))
-	}
-
-	return a.uuc.WithdrawList(ctx, &biz.User{
-		ID: userId,
-	}, "usdt")
+	return nil, nil
 }
 
 func (a *AppService) TradeList(ctx context.Context, req *v1.TradeListRequest) (*v1.TradeListReply, error) {

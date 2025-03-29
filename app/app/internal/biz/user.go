@@ -303,7 +303,7 @@ type UserBalanceRepo interface {
 	WithdrawDhb(ctx context.Context, userId int64, amount int64) error
 	WithdrawC(ctx context.Context, userId int64, amount int64) error
 	TranDhb(ctx context.Context, userId int64, toUserId int64, amount int64) error
-	GetWithdrawByUserId(ctx context.Context, userId int64, typeCoin string) ([]*Withdraw, error)
+	GetWithdrawByUserId(ctx context.Context, userId int64, b *Pagination) ([]*Withdraw, error)
 	GetWithdrawByUserId2(ctx context.Context, userId int64) ([]*Withdraw, error)
 	GetUserBalanceRecordByUserId(ctx context.Context, userId int64, typeCoin string, tran string) ([]*UserBalanceRecord, error)
 	GetUserBalanceRecordsByUserId(ctx context.Context, userId int64) ([]*UserBalanceRecord, error)
@@ -1650,51 +1650,47 @@ func (uuc *UserUseCase) SetTodayList(ctx context.Context, user *User) (*v1.SetTo
 	}, nil
 }
 
-func (uuc *UserUseCase) WithdrawList(ctx context.Context, user *User, reqTypeCoin string) (*v1.WithdrawListReply, error) {
+func (uuc *UserUseCase) WithdrawList(ctx context.Context, req *v1.WithdrawListRequest, user *User, reqTypeCoin string) (*v1.WithdrawListReply, error) {
 
-	res := make([]*v1.WithdrawListReply_List, 0)
-	res = append(res, &v1.WithdrawListReply_List{
-		CreatedAt: "2006-01-02 15:04:05",
-		Amount:    20,
-	}, &v1.WithdrawListReply_List{
-		CreatedAt: "2006-01-03 15:04:05",
-		Amount:    10,
+	//res := make([]*v1.WithdrawListReply_List, 0)
+	//res = append(res, &v1.WithdrawListReply_List{
+	//	CreatedAt: "2006-01-02 15:04:05",
+	//	Amount:    20,
+	//}, &v1.WithdrawListReply_List{
+	//	CreatedAt: "2006-01-03 15:04:05",
+	//	Amount:    10,
+	//})
+	//return &v1.WithdrawListReply{
+	//	Status: "ok",
+	//	Count:  2,
+	//	List:   nil,
+	//}, nil
+
+	var (
+		withdraws []*Withdraw
+		err       error
+	)
+
+	res := &v1.WithdrawListReply{
+		List: make([]*v1.WithdrawListReply_List, 0),
+	}
+
+	withdraws, err = uuc.ubRepo.GetWithdrawByUserId(ctx, user.ID, &Pagination{
+		PageNum:  int(req.Page),
+		PageSize: 0,
 	})
-	return &v1.WithdrawListReply{
-		Status: "ok",
-		Count:  2,
-		List:   nil,
-	}, nil
+	if nil != err {
+		return res, err
+	}
 
-	//var (
-	//	withdraws []*Withdraw
-	//	typeCoin  = "usdt"
-	//	err       error
-	//)
-	//
-	//res := &v1.WithdrawListReply{
-	//	Withdraw: make([]*v1.WithdrawListReply_List, 0),
-	//}
-	//
-	//if "" != reqTypeCoin {
-	//	typeCoin = reqTypeCoin
-	//}
-	//
-	//withdraws, err = uuc.ubRepo.GetWithdrawByUserId(ctx, user.ID, typeCoin)
-	//if nil != err {
-	//	return res, err
-	//}
-	//
-	//for _, v := range withdraws {
-	//	res.Withdraw = append(res.Withdraw, &v1.WithdrawListReply_List{
-	//		CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-	//		Amount:    fmt.Sprintf("%.2f", float64(v.Amount)/float64(100000)),
-	//		Status:    v.Status,
-	//		Type:      v.Type,
-	//	})
-	//}
+	for _, v := range withdraws {
+		res.List = append(res.List, &v1.WithdrawListReply_List{
+			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+			Amount:    float64(v.Amount),
+		})
+	}
 
-	//return res, nil
+	return res, nil
 }
 
 func (uuc *UserUseCase) OrderList(ctx context.Context, user *User) (*v1.OrderListReply, error) {
