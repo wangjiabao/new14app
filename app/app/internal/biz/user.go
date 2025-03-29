@@ -1546,6 +1546,8 @@ func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListReques
 		reason = "total_one"
 	} else if 7 == req.ReqType {
 		reason = "total_two"
+	} else if 8 == req.ReqType {
+		reason = "location"
 	} else {
 		return &v1.RewardListReply{
 			Status: "ok",
