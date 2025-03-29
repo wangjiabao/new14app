@@ -419,6 +419,14 @@ func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *Us
 		//decodeBytes   []byte
 	)
 
+	recommendUser = &UserRecommend{
+		ID:            0,
+		UserId:        0,
+		RecommendCode: "",
+		Total:         0,
+		CreatedAt:     time.Time{},
+	}
+
 	user, err = uuc.repo.GetUserByAddress(ctx, u.Address) // 查询用户
 	if nil == user || nil != err {
 		code := req.SendBody.Code // 查询推荐码 abf00dd52c08a9213f225827bc3fb100 md5 dhbmachinefirst
@@ -464,9 +472,11 @@ func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *Us
 				return err
 			}
 
-			err = uuc.repo.UpdateUserMyRecommendTotalNum(ctx, recommendUser.UserId)
-			if err != nil {
-				return err
+			if 0 < recommendUser.UserId {
+				err = uuc.repo.UpdateUserMyRecommendTotalNum(ctx, recommendUser.UserId)
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
