@@ -2503,7 +2503,7 @@ func (uuc *UserUseCase) Withdraw(ctx context.Context, req *v1.WithdrawRequest, u
 				withdrawMax, _ = strconv.ParseFloat(vConfig.Value, 10)
 			}
 
-			if "withdraw_amount_max" == vConfig.KeyName {
+			if "withdraw_amount_min" == vConfig.KeyName {
 				withdrawMin, _ = strconv.ParseFloat(vConfig.Value, 10)
 			}
 		}
