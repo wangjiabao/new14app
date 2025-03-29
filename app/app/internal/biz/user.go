@@ -1577,8 +1577,8 @@ func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListReques
 
 	return &v1.RewardListReply{
 		Status: "ok",
-		Count:  2,
-		List:   nil,
+		Count:  uint64(count),
+		List:   res,
 	}, nil
 }
 
@@ -1677,7 +1677,7 @@ func (uuc *UserUseCase) WithdrawList(ctx context.Context, req *v1.WithdrawListRe
 
 	withdraws, err = uuc.ubRepo.GetWithdrawByUserId(ctx, user.ID, &Pagination{
 		PageNum:  int(req.Page),
-		PageSize: 0,
+		PageSize: 10,
 	})
 	if nil != err {
 		return res, err
