@@ -1032,8 +1032,8 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 	return &v1.UserInfoReply{
 		Status:            "ok",
 		One:               userBalance.BalanceUsdtFloat,
-		Two:               float64(user.Amount),
-		Three:             user.AmountUsdt,
+		Two:               float64(myUser.Amount),
+		Three:             myUser.AmountUsdt,
 		Four:              four,
 		MyAddress:         myUser.Address,
 		InviteUserAddress: inviteUserAddress,
