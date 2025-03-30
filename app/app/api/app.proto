@@ -533,9 +533,6 @@ message OrderListReply {
 	message List {
 		string createdAt = 1; // 时间
 		double amount = 2; // 金额
-		double amountGet = 3; // 已获得利润
-		double amountGetSub = 5; // 剩余利润
-		double num = 4; // 出局倍数
 	}
 }
 

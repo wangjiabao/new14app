@@ -648,14 +648,14 @@ func (u *UserRepo) UpdateUserRewardAreaTwo(ctx context.Context, userId int64, am
 }
 
 // GetBuyRecord .
-func (u *UserRepo) GetBuyRecord(ctx context.Context, b *biz.Pagination) ([]*biz.BuyRecord, int64, error) {
+func (u *UserRepo) GetBuyRecord(ctx context.Context, userId uint64, b *biz.Pagination) ([]*biz.BuyRecord, int64, error) {
 	res := make([]*biz.BuyRecord, 0)
 
 	var (
 		buyRecord []*BuyRecord
 		count     int64
 	)
-	instance := u.data.db.Table("buy_record")
+	instance := u.data.db.Table("buy_record").Where("user_id=?", userId)
 	instance = instance.Count(&count)
 
 	if err := instance.Order("id desc").Scopes(Paginate(b.PageNum, b.PageSize)).Find(&buyRecord).Error; err != nil {

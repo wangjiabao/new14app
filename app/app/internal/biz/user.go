@@ -385,7 +385,7 @@ type UserRepo interface {
 	UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amountUsdt float64) error
 	UpdateUserRewardAreaTwo(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	GetUserById(ctx context.Context, Id int64) (*User, error)
-	GetBuyRecord(ctx context.Context, b *Pagination) ([]*BuyRecord, int64, error)
+	GetBuyRecord(ctx context.Context, userId uint64, b *Pagination) ([]*BuyRecord, int64, error)
 	GetUserByAddresses(ctx context.Context, Addresses ...string) (map[string]*User, error)
 	GetUserByAddress(ctx context.Context, address string) (*User, error)
 	CreateUser(ctx context.Context, user *User) (*User, error)
@@ -1827,7 +1827,7 @@ func (uuc *UserUseCase) OrderList(ctx context.Context, req *v1.OrderListRequest,
 		return nil, err
 	}
 
-	buyRecord, count, err = uuc.repo.GetBuyRecord(ctx, &Pagination{PageNum: int(req.Page), PageSize: 10})
+	buyRecord, count, err = uuc.repo.GetBuyRecord(ctx, uint64(myUser.ID), &Pagination{PageNum: int(req.Page), PageSize: 10})
 	if nil != err {
 		return &v1.OrderListReply{
 			Status: "err",
