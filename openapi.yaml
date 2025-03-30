@@ -866,15 +866,8 @@ components:
                 amount:
                     type: number
                     format: double
-                amountGet:
-                    type: number
-                    format: double
-                amountGetSub:
-                    type: number
-                    format: double
-                num:
-                    type: number
-                    format: double
+                status:
+                    type: string
         PasswordChangeReply:
             type: object
             properties:

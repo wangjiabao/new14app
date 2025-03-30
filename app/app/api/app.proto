@@ -533,6 +533,7 @@ message OrderListReply {
 	message List {
 		string createdAt = 1; // 时间
 		double amount = 2; // 金额
+		uint64 status = 3;
 	}
 }
 
