@@ -403,8 +403,9 @@ message UserInfoReply {
 
 	double one = 1; // 利润钱包
 	double two = 2;// 本金钱包
-	double three = 3; // 体验钱包
-	double four = 4; // 剩余利润额度
+	double three = 3; // 总认购
+	double four = 4; // 带释放
+	double fourOne = 5; // 已释放
 
 	string myAddress = 14; // 我的地址
 	string inviteUserAddress = 15; // 我的直推人地址
@@ -418,6 +419,27 @@ message UserInfoReply {
 
 	double withdrawMin = 13; // 最大提现
 	double withdrawMax = 12; // 最小提现
+
+	double fiveOne = 21;// 静态奖励
+	double fiveTwo = 22;// 直推奖励
+	double fiveThree = 23;// 团队奖励
+	double fiveFour = 24;// 大区业绩
+	double fiveFive = 25;// 小区业绩
+	double fiveSix = 26;// 总业绩
+
+	repeated List list = 31; // 前三名 绩效
+	message List {
+		string address = 3; // 地址
+		double amount = 2; // 绩效
+		double reward = 1; // 奖励金额
+	}
+
+	repeated ListTwo listTwo = 32; // 前三名 推广
+	message ListTwo {
+		string address = 3; // 地址
+		uint64 num = 2; // 人数
+		double reward = 1; // 奖励金额
+	}
 }
 
 message RewardListRequest {

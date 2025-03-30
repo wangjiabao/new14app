@@ -42,6 +42,9 @@ type User struct {
 	MyTotalAmount          float64
 	AmountUsdtGet          float64
 	AmountRecommendUsdtGet float64
+	RecommendUserReward    int64
+	RecommendUser          int64
+	RecommendUserH         int64
 }
 
 type Total struct {
@@ -109,24 +112,25 @@ type Config struct {
 }
 
 type UserBalance struct {
-	ID                  int64
-	UserId              int64
-	BalanceUsdt         int64
-	BalanceUsdt2        int64
-	BalanceDhb          int64
-	RecommendTotal      int64
-	AreaTotal           int64
-	FourTotal           int64
-	LocationTotal       int64
-	BalanceC            int64
-	RecommendTotalFloat float64
-	AreaTotalFloat      float64
-	AreaTotalFloatTwo   float64
-	AreaTotalFloatThree float64
-	LocationTotalFloat  float64
-	BalanceUsdtFloat    float64
-	BalanceRawFloat     float64
-	BalanceKsdtFloat    float64
+	ID                     int64
+	UserId                 int64
+	BalanceUsdt            int64
+	BalanceUsdt2           int64
+	BalanceDhb             int64
+	RecommendTotal         int64
+	AreaTotal              int64
+	FourTotal              int64
+	LocationTotal          int64
+	BalanceC               int64
+	RecommendTotalFloat    float64
+	RecommendTotalFloatTwo float64
+	AreaTotalFloat         float64
+	AreaTotalFloatTwo      float64
+	AreaTotalFloatThree    float64
+	LocationTotalFloat     float64
+	BalanceUsdtFloat       float64
+	BalanceRawFloat        float64
+	BalanceKsdtFloat       float64
 }
 
 type Stake struct {
@@ -236,13 +240,14 @@ type Reward struct {
 }
 
 type BuyRecord struct {
-	ID        int64
-	UserId    int64
-	Status    int64
-	Amount    float64
-	AmountGet float64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          int64
+	UserId      int64
+	Status      int64
+	Amount      float64
+	AmountGet   float64
+	LastUpdated int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type Pagination struct {
@@ -367,17 +372,20 @@ type UserInfoRepo interface {
 }
 
 type UserRepo interface {
+	GetAllUsersOrderAmountBiw(ctx context.Context) ([]*User, error)
+	GetAllUsersRecommendOrder(ctx context.Context) ([]*User, error)
 	GetEthUserRecordListByUserId(ctx context.Context, userId int64) ([]*EthUserRecord, error)
 	InRecordNew(ctx context.Context, userId int64, address string, amount int64, coinType string) error
 	UpdateUserNewTwoNew(ctx context.Context, userId int64, amount uint64, amountUsdt float64, last uint64) error
 	UpdateUserMyTotalAmount(ctx context.Context, userId int64, amountUsdt float64) error
-	UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64) error
+	UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64, address string, rewardHb int64, tmpRewardU bool) error
 	UpdateUserMyRecommendTotal(ctx context.Context, userId int64, amountUsdt float64) error
 	UpdateUserVip(ctx context.Context, userId int64, vip int64) error
 	UpdateUserRewardRecommend2(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amountUsdt float64) error
 	UpdateUserRewardAreaTwo(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	GetUserById(ctx context.Context, Id int64) (*User, error)
+	GetBuyRecord(ctx context.Context, b *Pagination) ([]*BuyRecord, int64, error)
 	GetUserByAddresses(ctx context.Context, Addresses ...string) (map[string]*User, error)
 	GetUserByAddress(ctx context.Context, address string) (*User, error)
 	CreateUser(ctx context.Context, user *User) (*User, error)
@@ -414,6 +422,7 @@ func (uuc *UserUseCase) GetDhbConfig(ctx context.Context) ([]*Config, error) {
 func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *User, req *v1.EthAuthorizeRequest) (*User, error, string) {
 	var (
 		user          *User
+		rUser         *User
 		recommendUser *UserRecommend
 		err           error
 		//decodeBytes   []byte
@@ -454,6 +463,13 @@ func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *Us
 			if nil == recommendUser || err != nil {
 				return nil, errors.New(500, "USER_ERROR", "无效的推荐码3"), "无效的推荐码3"
 			}
+
+			if 0 < recommendUser.UserId {
+				rUser, err = uuc.repo.GetUserById(ctx, recommendUser.UserId)
+				if nil == rUser || err != nil {
+					return nil, errors.New(500, "USER_ERROR", "无效的推荐码3"), "无效的推荐码3"
+				}
+			}
 		}
 
 		if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
@@ -472,8 +488,31 @@ func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *Us
 				return err
 			}
 
-			if 0 < recommendUser.UserId {
-				err = uuc.repo.UpdateUserMyRecommendTotalNum(ctx, recommendUser.UserId)
+			if 0 < recommendUser.UserId && nil != rUser {
+
+				tmpRUser := rUser.RecommendUser
+				tmpRUser += 1
+				tmpRewardHb := int64(0)
+				if 1 <= tmpRUser && tmpRUser < 3 {
+
+				} else if 3 <= tmpRUser && tmpRUser < 8 {
+					tmpRewardHb = 299
+				} else if 8 <= tmpRUser && tmpRUser < 16 {
+					tmpRewardHb = 999
+				} else if 16 <= tmpRUser && tmpRUser < 50 {
+					tmpRewardHb = 2999
+				} else if 50 <= tmpRUser && tmpRUser < 100 {
+					tmpRewardHb = 5999
+				} else if 100 <= tmpRUser {
+					tmpRewardHb = 9999
+				}
+
+				tmpRewardU := false
+				if 20 > rUser.RecommendUserReward {
+					tmpRewardU = true
+				}
+
+				err = uuc.repo.UpdateUserMyRecommendTotalNum(ctx, recommendUser.UserId, u.Address, tmpRewardHb, tmpRewardU)
 				if err != nil {
 					return err
 				}
@@ -616,7 +655,7 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		withdrawMax           float64
 		allOne                float64
 		allTwo                float64
-		//users                 []*User
+		users                 []*User
 	)
 
 	// 配置
@@ -644,16 +683,15 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		}
 	}
 
-	//users, err = uuc.repo.GetAllUsers(ctx)
-	//if nil != err {
-	//	return nil, err
-	//}
-	//
-	//usersMap := make(map[int64]*User, 0)
-	//for _, vUsers := range users {
-	//	totalAi += vUsers.AmountUsdt
-	//	usersMap[vUsers.ID] = vUsers
-	//}
+	users, err = uuc.repo.GetAllUsers(ctx)
+	if nil != err {
+		return nil, err
+	}
+
+	usersMap := make(map[int64]*User, 0)
+	for _, vUsers := range users {
+		usersMap[vUsers.ID] = vUsers
+	}
 
 	myUser, err = uuc.repo.GetUserById(ctx, user.ID)
 	if nil != err {
@@ -908,69 +946,66 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 	//	})
 	//}
 	//
-	//// 推荐人
-	//var (
-	//	userRecommends []*UserRecommend
-	//	myLowUser      map[int64][]*UserRecommend
-	//)
-	//
-	//myLowUser = make(map[int64][]*UserRecommend, 0)
-	//
-	//userRecommends, err = uuc.urRepo.GetUserRecommends(ctx)
-	//if nil != err {
-	//	return nil, err
-	//}
-	//
-	//for _, vUr := range userRecommends {
-	//	// 我的直推
-	//	var (
-	//		myUserRecommendUserIdTmp int64
-	//		tmpRecommendUserIds      []string
-	//	)
-	//
-	//	tmpRecommendUserIds = strings.Split(vUr.RecommendCode, "D")
-	//	if 2 <= len(tmpRecommendUserIds) {
-	//		myUserRecommendUserIdTmp, _ = strconv.ParseInt(tmpRecommendUserIds[len(tmpRecommendUserIds)-1], 10, 64) // 最后一位是直推人
-	//	}
-	//
-	//	if 0 >= myUserRecommendUserIdTmp {
-	//		continue
-	//	}
-	//
-	//	if _, ok := myLowUser[myUserRecommendUserIdTmp]; !ok {
-	//		myLowUser[myUserRecommendUserIdTmp] = make([]*UserRecommend, 0)
-	//	}
-	//
-	//	myLowUser[myUserRecommendUserIdTmp] = append(myLowUser[myUserRecommendUserIdTmp], vUr)
-	//}
-	//
-	//// 获取业绩
-	//tmpAreaMax := float64(0)
-	//tmpAreaMin := float64(0)
-	//tmpMaxId := int64(0)
-	//recommendTotal := float64(0)
-	//recommendTotalGet := float64(0)
-	//for _, vMyLowUser := range myLowUser[myUser.ID] {
-	//	if _, ok := usersMap[vMyLowUser.UserId]; !ok {
-	//		continue
-	//	}
-	//
-	//	recommendTotal += usersMap[vMyLowUser.UserId].AmountUsdt
-	//	recommendTotalGet += usersMap[vMyLowUser.UserId].AmountRecommendUsdtGet
-	//
-	//	if tmpAreaMax < usersMap[vMyLowUser.UserId].MyTotalAmount+usersMap[vMyLowUser.UserId].AmountUsdt {
-	//		tmpAreaMax = usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].AmountUsdt
-	//		tmpMaxId = vMyLowUser.UserId
-	//	}
-	//}
-	//
-	//if 0 < tmpMaxId {
-	//	for _, vMyLowUser := range myLowUser[myUser.ID] {
-	//		if tmpMaxId != vMyLowUser.UserId {
-	//			tmpAreaMin += usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].AmountUsdt
-	//		}
-	//	}
-	//}
+
+	// 推荐人
+	var (
+		userRecommends []*UserRecommend
+		myLowUser      map[int64][]*UserRecommend
+	)
+
+	myLowUser = make(map[int64][]*UserRecommend, 0)
+
+	userRecommends, err = uuc.urRepo.GetUserRecommends(ctx)
+	if nil != err {
+		return nil, err
+	}
+
+	for _, vUr := range userRecommends {
+		// 我的直推
+		var (
+			myUserRecommendUserIdTmp int64
+			tmpRecommendUserIds      []string
+		)
+
+		tmpRecommendUserIds = strings.Split(vUr.RecommendCode, "D")
+		if 2 <= len(tmpRecommendUserIds) {
+			myUserRecommendUserIdTmp, _ = strconv.ParseInt(tmpRecommendUserIds[len(tmpRecommendUserIds)-1], 10, 64) // 最后一位是直推人
+		}
+
+		if 0 >= myUserRecommendUserIdTmp {
+			continue
+		}
+
+		if _, ok := myLowUser[myUserRecommendUserIdTmp]; !ok {
+			myLowUser[myUserRecommendUserIdTmp] = make([]*UserRecommend, 0)
+		}
+
+		myLowUser[myUserRecommendUserIdTmp] = append(myLowUser[myUserRecommendUserIdTmp], vUr)
+	}
+
+	// 获取业绩
+	tmpAreaMax := float64(0)
+	tmpAreaMin := float64(0)
+	tmpMaxId := int64(0)
+	for _, vMyLowUser := range myLowUser[myUser.ID] {
+		if _, ok := usersMap[vMyLowUser.UserId]; !ok {
+			continue
+		}
+
+		if tmpAreaMax < usersMap[vMyLowUser.UserId].MyTotalAmount+usersMap[vMyLowUser.UserId].AmountUsdt {
+			tmpAreaMax = usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].AmountUsdt
+			tmpMaxId = vMyLowUser.UserId
+		}
+	}
+
+	if 0 < tmpMaxId {
+		for _, vMyLowUser := range myLowUser[myUser.ID] {
+			if tmpMaxId != vMyLowUser.UserId {
+				tmpAreaMin += usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].AmountUsdt
+			}
+		}
+	}
+
 	//
 	//recommendTotalGetSub := float64(0)
 	//if recommendTotal > recommendTotalGet {
@@ -1002,15 +1037,15 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 
 	four := float64(0)
 	if 1 == myUser.Last {
-		four = 1.5*user.AmountUsdt - user.AmountUsdt
+		four = 1.5*myUser.AmountUsdt - myUser.AmountUsdtGet
 	} else if 2 == myUser.Last {
-		four = 1.8*user.AmountUsdt - user.AmountUsdt
+		four = 1.8*myUser.AmountUsdt - myUser.AmountUsdtGet
 	} else if 3 == myUser.Last {
-		four = 2*user.AmountUsdt - user.AmountUsdt
+		four = 2*myUser.AmountUsdt - myUser.AmountUsdtGet
 	} else if 4 == myUser.Last {
-		four = 2.5*user.AmountUsdt - user.AmountUsdt
+		four = 2.5*myUser.AmountUsdt - myUser.AmountUsdtGet
 	} else if 5 == myUser.Last {
-		four = 3*user.AmountUsdt - user.AmountUsdt
+		four = 3*myUser.AmountUsdt - myUser.AmountUsdtGet
 	}
 
 	tmpVip := uint64(0)
@@ -1029,7 +1064,90 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		return nil, nil
 	}
 
+	var (
+		usersOrderAmountBiw []*User
+	)
+	usersOrderAmountBiw, err = uuc.repo.GetAllUsersOrderAmountBiw(ctx)
+	if nil != err {
+		fmt.Println("今日分红错误用户获取失败，total，推荐人数")
+		return nil, nil
+	}
+
+	listTwo := make([]*v1.UserInfoReply_ListTwo, 0)
+	for k, v := range usersOrderAmountBiw {
+		if 0 >= v.AmountBiw {
+			continue
+		}
+
+		if 0 == k {
+			listTwo = append(listTwo, &v1.UserInfoReply_ListTwo{
+				Address: v.Address,
+				Num:     v.AmountBiw,
+				Reward:  total.One * allOne * 0.5,
+			})
+		} else if 1 == k {
+			listTwo = append(listTwo, &v1.UserInfoReply_ListTwo{
+				Address: v.Address,
+				Num:     v.AmountBiw,
+				Reward:  total.One * allOne * 0.3,
+			})
+		} else if 2 == k {
+			listTwo = append(listTwo, &v1.UserInfoReply_ListTwo{
+				Address: v.Address,
+				Num:     v.AmountBiw,
+				Reward:  total.One * allOne * 0.2,
+			})
+		} else {
+			break
+		}
+	}
+
+	var (
+		usersOrderRecommendOrder []*User
+	)
+	usersOrderRecommendOrder, err = uuc.repo.GetAllUsersRecommendOrder(ctx)
+	if nil != err {
+		fmt.Println("今日分红错误用户获取失败，total，推荐1人数")
+		return nil, nil
+	}
+
+	list := make([]*v1.UserInfoReply_List, 0)
+	for k, v := range usersOrderRecommendOrder {
+		if 0 >= v.AmountRecommendUsdtGet {
+			continue
+		}
+
+		if 0 == k {
+			list = append(list, &v1.UserInfoReply_List{
+				Address: v.Address,
+				Amount:  v.AmountRecommendUsdtGet,
+				Reward:  total.One * allTwo * 0.5,
+			})
+		} else if 1 == k {
+			list = append(list, &v1.UserInfoReply_List{
+				Address: v.Address,
+				Amount:  v.AmountRecommendUsdtGet,
+				Reward:  total.One * allTwo * 0.3,
+			})
+		} else if 2 == k {
+			list = append(list, &v1.UserInfoReply_List{
+				Address: v.Address,
+				Amount:  v.AmountRecommendUsdtGet,
+				Reward:  total.One * allTwo * 0.2,
+			})
+		} else {
+			break
+		}
+	}
+
 	return &v1.UserInfoReply{
+		FourOne:           myUser.AmountUsdtGet,
+		FiveOne:           userBalance.LocationTotalFloat,
+		FiveTwo:           userBalance.RecommendTotalFloat + userBalance.RecommendTotalFloatTwo,
+		FiveThree:         userBalance.AreaTotalFloat,
+		FiveFour:          tmpAreaMax,
+		FiveFive:          tmpAreaMin,
+		FiveSix:           myUser.MyTotalAmount,
 		Status:            "ok",
 		One:               userBalance.BalanceUsdtFloat,
 		Two:               float64(myUser.Amount),
@@ -1041,9 +1159,11 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		Price:             bPrice,
 		Five:              total.One * allOne,
 		Six:               total.One * allTwo,
-		Seven:             0,
+		Seven:             float64(myUser.RecommendUserH),
 		WithdrawMin:       withdrawMin,
 		WithdrawMax:       withdrawMax,
+		List:              list,
+		ListTwo:           listTwo,
 	}, nil
 }
 
@@ -1693,25 +1813,54 @@ func (uuc *UserUseCase) WithdrawList(ctx context.Context, req *v1.WithdrawListRe
 	return res, nil
 }
 
-func (uuc *UserUseCase) OrderList(ctx context.Context, user *User) (*v1.OrderListReply, error) {
+func (uuc *UserUseCase) OrderList(ctx context.Context, req *v1.OrderListRequest, user *User) (*v1.OrderListReply, error) {
 	res := make([]*v1.OrderListReply_List, 0)
-	res = append(res, &v1.OrderListReply_List{
-		CreatedAt:    "2006-01-02 15:04:05",
-		Amount:       100,
-		AmountGet:    100,
-		AmountGetSub: 50,
-		Num:          1.5,
-	}, &v1.OrderListReply_List{
-		CreatedAt:    "2006-01-02 15:04:05",
-		Amount:       200,
-		AmountGet:    200,
-		AmountGetSub: 100,
-		Num:          1.5,
-	})
+
+	var (
+		myUser    *User
+		buyRecord []*BuyRecord
+		count     int64
+		err       error
+	)
+	myUser, err = uuc.repo.GetUserById(ctx, user.ID)
+	if nil != err {
+		return nil, err
+	}
+
+	buyRecord, count, err = uuc.repo.GetBuyRecord(ctx, &Pagination{PageNum: int(req.Page), PageSize: 10})
+	if nil != err {
+		return &v1.OrderListReply{
+			Status: "err",
+			Count:  0,
+			List:   res,
+		}, nil
+	}
+
+	tmpNum := float64(0)
+	if 1 == myUser.Last {
+		tmpNum = 1.5
+	} else if 2 == myUser.Last {
+		tmpNum = 1.8
+	} else if 3 == myUser.Last {
+		tmpNum = 2.0
+	} else if 4 == myUser.Last {
+		tmpNum = 2.5
+	} else if 5 == myUser.Last {
+		tmpNum = 3
+	}
+
+	for _, vBuyRecord := range buyRecord {
+		res = append(res, &v1.OrderListReply_List{
+			CreatedAt: vBuyRecord.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+			Amount:    vBuyRecord.Amount,
+			Num:       tmpNum,
+		})
+	}
+
 	return &v1.OrderListReply{
 		Status: "ok",
-		Count:  2,
-		List:   nil,
+		Count:  uint64(count),
+		List:   res,
 	}, nil
 }
 

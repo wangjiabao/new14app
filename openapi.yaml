@@ -1133,6 +1133,9 @@ components:
                 four:
                     type: number
                     format: double
+                fourOne:
+                    type: number
+                    format: double
                 myAddress:
                     type: string
                 inviteUserAddress:
@@ -1155,6 +1158,53 @@ components:
                     type: number
                     format: double
                 withdrawMax:
+                    type: number
+                    format: double
+                fiveOne:
+                    type: number
+                    format: double
+                fiveTwo:
+                    type: number
+                    format: double
+                fiveThree:
+                    type: number
+                    format: double
+                fiveFour:
+                    type: number
+                    format: double
+                fiveFive:
+                    type: number
+                    format: double
+                fiveSix:
+                    type: number
+                    format: double
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserInfoReply_List'
+                listTwo:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserInfoReply_ListTwo'
+        UserInfoReply_List:
+            type: object
+            properties:
+                address:
+                    type: string
+                amount:
+                    type: number
+                    format: double
+                reward:
+                    type: number
+                    format: double
+        UserInfoReply_ListTwo:
+            type: object
+            properties:
+                address:
+                    type: string
+                num:
+                    type: string
+                reward:
                     type: number
                     format: double
         WithdrawListReply:

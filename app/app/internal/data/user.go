@@ -38,6 +38,9 @@ type User struct {
 	AmountUsdtGet          float64   `gorm:"type:decimal(65,20);not null"`
 	AmountRecommendUsdtGet float64   `gorm:"type:decimal(65,20);not null"`
 	Last                   uint64    `gorm:"type:bigint;not null"`
+	RecommendUserReward    int64     `gorm:"type:int;not null"`
+	RecommendUser          int64     `gorm:"type:int;not null"`
+	RecommendUserH         int64     `gorm:"type:int;not null"`
 }
 
 type Total struct {
@@ -144,26 +147,27 @@ type Config struct {
 }
 
 type UserBalance struct {
-	ID                  int64     `gorm:"primarykey;type:int"`
-	UserId              int64     `gorm:"type:int"`
-	BalanceUsdt         int64     `gorm:"type:bigint"`
-	BalanceUsdtNew      int64     `gorm:"type:bigint"`
-	BalanceDhb          int64     `gorm:"type:bigint"`
-	CreatedAt           time.Time `gorm:"type:datetime;not null"`
-	UpdatedAt           time.Time `gorm:"type:datetime;not null"`
-	AreaTotal           int64     `gorm:"type:bigint"`
-	RecommendTotal      int64     `gorm:"type:bigint"`
-	LocationTotal       int64     `gorm:"type:bigint"`
-	FourTotal           int64     `gorm:"type:bigint"`
-	BalanceC            int64     `gorm:"type:bigint"`
-	AreaTotalFloat      float64   `gorm:"type:decimal(65,20);not null"`
-	AreaTotalFloatTwo   float64   `gorm:"type:decimal(65,20);not null"`
-	AreaTotalFloatThree float64   `gorm:"type:decimal(65,20);not null"`
-	RecommendTotalFloat float64   `gorm:"type:decimal(65,20);not null"`
-	LocationTotalFloat  float64   `gorm:"type:decimal(65,20);not null"`
-	BalanceUsdtFloat    float64   `gorm:"type:decimal(65,20);not null"`
-	BalanceKsdtFloat    float64   `gorm:"type:decimal(65,20);not null"`
-	BalanceRawFloat     float64   `gorm:"type:decimal(65,20);not null"`
+	ID                     int64     `gorm:"primarykey;type:int"`
+	UserId                 int64     `gorm:"type:int"`
+	BalanceUsdt            int64     `gorm:"type:bigint"`
+	BalanceUsdtNew         int64     `gorm:"type:bigint"`
+	BalanceDhb             int64     `gorm:"type:bigint"`
+	CreatedAt              time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt              time.Time `gorm:"type:datetime;not null"`
+	AreaTotal              int64     `gorm:"type:bigint"`
+	RecommendTotal         int64     `gorm:"type:bigint"`
+	LocationTotal          int64     `gorm:"type:bigint"`
+	FourTotal              int64     `gorm:"type:bigint"`
+	BalanceC               int64     `gorm:"type:bigint"`
+	AreaTotalFloat         float64   `gorm:"type:decimal(65,20);not null"`
+	AreaTotalFloatTwo      float64   `gorm:"type:decimal(65,20);not null"`
+	AreaTotalFloatThree    float64   `gorm:"type:decimal(65,20);not null"`
+	RecommendTotalFloat    float64   `gorm:"type:decimal(65,20);not null"`
+	RecommendTotalFloatTwo float64   `gorm:"type:decimal(65,20);not null"`
+	LocationTotalFloat     float64   `gorm:"type:decimal(65,20);not null"`
+	BalanceUsdtFloat       float64   `gorm:"type:decimal(65,20);not null"`
+	BalanceKsdtFloat       float64   `gorm:"type:decimal(65,20);not null"`
+	BalanceRawFloat        float64   `gorm:"type:decimal(65,20);not null"`
 }
 
 type Withdraw struct {
@@ -380,11 +384,34 @@ func (c *ConfigRepo) UpdateConfig(ctx context.Context, id int64, value string) (
 }
 
 // UpdateUserMyRecommendTotalNum .
-func (u *UserRepo) UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{
-			"amount_biw": gorm.Expr("amount_biw + ?", 1), // 这里字段用记录直推激活人数，和金额
-		})
+func (u *UserRepo) UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64, address string, rewardHb int64, tmpRewardU bool) error {
+	updateMap := map[string]interface{}{
+		"recommend_user":   gorm.Expr("recommend_user + ?", 1),
+		"recommend_user_h": rewardHb,
+		"amount_biw":       gorm.Expr("amount_biw + ?", 1), // 这里字段用记录直推激活人数，和金额
+	}
+
+	if tmpRewardU {
+		updateMap["amount"] = gorm.Expr("amount + ?", 1)
+		updateMap["recommend_user_reward"] = gorm.Expr("recommend_user_reward + ?", 1)
+
+		var (
+			err    error
+			reward Reward
+		)
+		reward.UserId = userId
+		reward.AmountNew = 1
+		reward.Address = address
+		reward.Type = "system_reward_recommend_three" // 本次分红的行为类型
+		reward.Reason = "recommend_three"
+		err = u.data.DB(ctx).Table("reward").Create(&reward).Error
+		if err != nil {
+			return err
+		}
+	}
+
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("recommend_user_reward<=?", 20).
+		Updates(updateMap)
 	if res.Error != nil {
 		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 	}
@@ -620,6 +647,41 @@ func (u *UserRepo) UpdateUserRewardAreaTwo(ctx context.Context, userId int64, am
 	return userBalanceRecode.ID, nil
 }
 
+// GetBuyRecord .
+func (u *UserRepo) GetBuyRecord(ctx context.Context, b *biz.Pagination) ([]*biz.BuyRecord, int64, error) {
+	res := make([]*biz.BuyRecord, 0)
+
+	var (
+		buyRecord []*BuyRecord
+		count     int64
+	)
+	instance := u.data.db.Table("buy_record")
+	instance = instance.Count(&count)
+
+	if err := instance.Order("id desc").Scopes(Paginate(b.PageNum, b.PageSize)).Find(&buyRecord).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, 0, nil
+		}
+
+		return nil, 0, errors.New(500, "buy_record ERROR", err.Error())
+	}
+
+	for _, v := range buyRecord {
+		res = append(res, &biz.BuyRecord{
+			ID:          v.ID,
+			UserId:      v.UserId,
+			Status:      v.Status,
+			Amount:      v.Amount,
+			AmountGet:   v.AmountGet,
+			CreatedAt:   v.CreatedAt,
+			UpdatedAt:   v.UpdatedAt,
+			LastUpdated: v.LastUpdated,
+		})
+	}
+
+	return res, count, nil
+}
+
 // UpdateUserNewTwoNew .
 func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId int64, amount uint64, amountUsdt float64, last uint64) error {
 
@@ -818,7 +880,81 @@ func (u *UserRepo) GetUserById(ctx context.Context, Id int64) (*biz.User, error)
 		Last:                   user.Last,
 		Vip:                    user.Vip,
 		VipAdmin:               user.VipAdmin,
+		RecommendUser:          user.RecommendUser,
+		RecommendUserReward:    user.RecommendUserReward,
+		RecommendUserH:         user.RecommendUserH,
 	}, nil
+}
+
+// GetAllUsersOrderAmountBiw .
+func (u *UserRepo) GetAllUsersOrderAmountBiw(ctx context.Context) ([]*biz.User, error) {
+	var users []*User
+
+	res := make([]*biz.User, 0)
+	if err := u.data.db.Table("user").Order("amount_biw desc").Limit(3).Find(&users).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	for _, item := range users {
+		res = append(res, &biz.User{
+			ID:                     item.ID,
+			Address:                item.Address,
+			Lock:                   item.Lock,
+			AddressTwo:             item.AddressTwo,
+			AddressThree:           item.AddressThree,
+			Amount:                 item.Amount,
+			AmountUsdt:             item.AmountUsdt,
+			AmountUsdtGet:          item.AmountUsdtGet,
+			AmountBiw:              item.AmountBiw,
+			MyTotalAmount:          item.MyTotalAmount,
+			AmountRecommendUsdtGet: item.AmountRecommendUsdtGet,
+			Last:                   item.Last,
+			Vip:                    item.Vip,
+			VipAdmin:               item.VipAdmin,
+			UpdatedAt:              item.UpdatedAt,
+			LockReward:             item.LockReward,
+		})
+	}
+	return res, nil
+}
+
+// GetAllUsersRecommendOrder .
+func (u *UserRepo) GetAllUsersRecommendOrder(ctx context.Context) ([]*biz.User, error) {
+	var users []*User
+
+	res := make([]*biz.User, 0)
+	if err := u.data.db.Table("user").Order("amount_recommend_usdt_get asc").Limit(3).Find(&users).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	for _, item := range users {
+		res = append(res, &biz.User{
+			ID:                     item.ID,
+			Address:                item.Address,
+			Lock:                   item.Lock,
+			AddressTwo:             item.AddressTwo,
+			AddressThree:           item.AddressThree,
+			Amount:                 item.Amount,
+			AmountUsdt:             item.AmountUsdt,
+			AmountUsdtGet:          item.AmountUsdtGet,
+			MyTotalAmount:          item.MyTotalAmount,
+			AmountRecommendUsdtGet: item.AmountRecommendUsdtGet,
+			Last:                   item.Last,
+			Vip:                    item.Vip,
+			VipAdmin:               item.VipAdmin,
+			UpdatedAt:              item.UpdatedAt,
+			LockReward:             item.LockReward,
+		})
+	}
+	return res, nil
 }
 
 // GetTotal .
@@ -945,6 +1081,9 @@ func (u *UserRepo) GetUserByUserIdsTwo(ctx context.Context, userIds []int64) (ma
 			AmountRecommendUsdtGet: item.AmountRecommendUsdtGet,
 			MyTotalAmount:          item.MyTotalAmount,
 			Vip:                    item.Vip,
+			RecommendUser:          item.RecommendUser,
+			RecommendUserReward:    item.RecommendUserReward,
+			RecommendUserH:         item.RecommendUserH,
 		}
 	}
 	return res, nil
@@ -1042,6 +1181,7 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 	var user User
 	user.Address = uc.Address
 	user.Password = uc.Password
+	user.Amount = 18
 
 	//user.AddressTwo = uc.AddressTwo
 	//user.PrivateKey = uc.PrivateKey
@@ -1578,24 +1718,25 @@ func (ub UserBalanceRepo) GetUserBalance(ctx context.Context, userId int64) (*bi
 	}
 
 	return &biz.UserBalance{
-		ID:                  userBalance.ID,
-		UserId:              userBalance.UserId,
-		BalanceUsdt:         userBalance.BalanceUsdt,
-		BalanceUsdt2:        userBalance.BalanceUsdtNew,
-		BalanceDhb:          userBalance.BalanceDhb,
-		RecommendTotal:      userBalance.RecommendTotal,
-		AreaTotal:           userBalance.AreaTotal,
-		LocationTotal:       userBalance.LocationTotal,
-		FourTotal:           userBalance.FourTotal,
-		BalanceC:            userBalance.BalanceC,
-		AreaTotalFloat:      userBalance.AreaTotalFloat,
-		AreaTotalFloatTwo:   userBalance.AreaTotalFloatTwo,
-		RecommendTotalFloat: userBalance.RecommendTotalFloat,
-		LocationTotalFloat:  userBalance.LocationTotalFloat,
-		BalanceRawFloat:     userBalance.BalanceRawFloat,
-		BalanceUsdtFloat:    userBalance.BalanceUsdtFloat,
-		BalanceKsdtFloat:    userBalance.BalanceKsdtFloat,
-		AreaTotalFloatThree: userBalance.AreaTotalFloatThree,
+		ID:                     userBalance.ID,
+		UserId:                 userBalance.UserId,
+		BalanceUsdt:            userBalance.BalanceUsdt,
+		BalanceUsdt2:           userBalance.BalanceUsdtNew,
+		BalanceDhb:             userBalance.BalanceDhb,
+		RecommendTotal:         userBalance.RecommendTotal,
+		AreaTotal:              userBalance.AreaTotal,
+		LocationTotal:          userBalance.LocationTotal,
+		FourTotal:              userBalance.FourTotal,
+		BalanceC:               userBalance.BalanceC,
+		AreaTotalFloat:         userBalance.AreaTotalFloat,
+		AreaTotalFloatTwo:      userBalance.AreaTotalFloatTwo,
+		RecommendTotalFloat:    userBalance.RecommendTotalFloat,
+		RecommendTotalFloatTwo: userBalance.RecommendTotalFloatTwo,
+		LocationTotalFloat:     userBalance.LocationTotalFloat,
+		BalanceRawFloat:        userBalance.BalanceRawFloat,
+		BalanceUsdtFloat:       userBalance.BalanceUsdtFloat,
+		BalanceKsdtFloat:       userBalance.BalanceKsdtFloat,
+		AreaTotalFloatThree:    userBalance.AreaTotalFloatThree,
 	}, nil
 }
 

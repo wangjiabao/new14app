@@ -356,7 +356,7 @@ func (a *AppService) OrderList(ctx context.Context, req *v1.OrderListRequest) (*
 		userId = int64(c["UserId"].(float64))
 	}
 
-	return a.uuc.OrderList(ctx, &biz.User{
+	return a.uuc.OrderList(ctx, req, &biz.User{
 		ID: userId,
 	})
 }
