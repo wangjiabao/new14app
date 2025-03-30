@@ -1143,6 +1143,7 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 	}
 
 	return &v1.UserInfoReply{
+		Raw:               userBalance.BalanceRawFloat,
 		FourOne:           myUser.AmountUsdtGet,
 		FiveOne:           userBalance.LocationTotalFloat,
 		FiveTwo:           userBalance.RecommendTotalFloat + userBalance.RecommendTotalFloatTwo,

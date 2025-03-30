@@ -406,6 +406,7 @@ message UserInfoReply {
 	double three = 3; // 总认购
 	double four = 4; // 带释放
 	double fourOne = 5; // 已释放
+	double raw = 30;
 
 	string myAddress = 14; // 我的地址
 	string inviteUserAddress = 15; // 我的直推人地址

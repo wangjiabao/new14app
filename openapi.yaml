@@ -1129,6 +1129,9 @@ components:
                 fourOne:
                     type: number
                     format: double
+                raw:
+                    type: number
+                    format: double
                 myAddress:
                     type: string
                 inviteUserAddress:
