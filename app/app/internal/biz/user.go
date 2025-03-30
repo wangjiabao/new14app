@@ -1779,7 +1779,7 @@ func (uuc *UserUseCase) SetTodayList(ctx context.Context, user *User) (*v1.SetTo
 	return &v1.SetTodayListReply{
 		Status: "ok",
 		Count:  uint64(len(stake)),
-		List:   nil,
+		List:   res,
 	}, nil
 }
 
