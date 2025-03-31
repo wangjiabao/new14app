@@ -319,6 +319,8 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		AmountUsdt: user.AmountUsdt,
 		OutRate:    uint64(user.OutRate),
 		Lock:       user.Lock,
+		Vip:        user.Vip,
+		VipAdmin:   user.VipAdmin,
 	}, nil
 }
 

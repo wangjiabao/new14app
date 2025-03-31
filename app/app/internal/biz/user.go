@@ -1238,8 +1238,13 @@ func (uuc *UserUseCase) UserRecommend(ctx context.Context, req *v1.RecommendList
 		})
 	}
 
+	tmpVip := uint64(user.Vip)
+	if 0 < user.VipAdmin {
+		tmpVip = uint64(user.VipAdmin)
+	}
+
 	return &v1.RecommendListReply{
-		Level:        uint64(user.Vip),
+		Level:        tmpVip,
 		TotalNum:     recommendTotal,
 		TotalTeamNum: uint64(totalNum),
 		TotalAmount:  user.MyTotalAmount,
