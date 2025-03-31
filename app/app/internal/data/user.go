@@ -3702,7 +3702,11 @@ func (ub *UserBalanceRepo) GetUserRewardByUserIdPage(ctx context.Context, b *biz
 
 	res := make([]*biz.Reward, 0)
 
-	instance := ub.data.db.Where("user_id", userId).Table("reward").Where("reason=?", reason).Order("id desc")
+	instance := ub.data.db.Where("user_id", userId).Table("reward").Order("id desc")
+	if 0 < len(reason) {
+		instance = instance.Where("reason=?", reason)
+	}
+
 	instance = instance.Count(&count)
 
 	if err := instance.Scopes(Paginate(b.PageNum, b.PageSize)).Find(&rewards).Error; err != nil {

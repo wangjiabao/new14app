@@ -1676,12 +1676,16 @@ func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListReques
 		reason = "total_two"
 	} else if 8 == req.ReqType {
 		reason = "location"
-	} else {
-		return &v1.RewardListReply{
-			Status: "ok",
-			Count:  uint64(count),
-			List:   res,
-		}, err
+	} else if 9 == req.ReqType {
+		reason = "set_day"
+	} else if 10 == req.ReqType {
+		reason = "buy"
+	} else if 11 == req.ReqType {
+		reason = "recommend_h" // 赠送hb矿机
+	} else if 12 == req.ReqType {
+		reason = "exchange"
+	} else if 13 == req.ReqType {
+		reason = "withdraw"
 	}
 
 	userRewards, err, count = uuc.ubRepo.GetUserRewardByUserIdPage(ctx, &Pagination{
