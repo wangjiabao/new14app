@@ -1503,7 +1503,7 @@ func (ur *UserRecommendRepo) GetUserRecommendByCode(ctx context.Context, code st
 // GetUserRecommendLikeCodeSum .
 func (ur *UserRecommendRepo) GetUserRecommendLikeCodeSum(ctx context.Context, code string) (int64, error) {
 	var total UserBalanceTotal
-	if err := ur.data.db.Where("recommend_code Like ?", code+"%").Table("user_recommend").Select("sum(id) as total").Take(&total).Error; err != nil {
+	if err := ur.data.db.Where("recommend_code Like ?", code+"%").Table("user_recommend").Select("count(id) as total").Take(&total).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, errors.NotFound("USER_BALANCE_RECORD_NOT_FOUND", "user balance not found")
 		}
