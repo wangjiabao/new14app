@@ -401,45 +401,45 @@ message UserInfoRequest {
 message UserInfoReply {
 	string status = 11;
 
-	double one = 1; // 利润钱包
-	double two = 2;// 本金钱包
-	double three = 3; // 总认购
-	double four = 4; // 带释放
-	double fourOne = 5; // 已释放
-	double raw = 30;
+	string one = 1; // 利润钱包
+	string two = 2;// 本金钱包
+	string three = 3; // 总认购
+	string four = 4; // 带释放
+	string fourOne = 5; // 已释放
+	string raw = 30;
 
 	string myAddress = 14; // 我的地址
 	string inviteUserAddress = 15; // 我的直推人地址
 	uint64 level = 6; // 我的vip级别
 
 	double price = 7; // hb价格
-	double five = 8; // 推广奖池
-	double six = 9; // 绩效奖池
+	string five = 8; // 推广奖池
+	string six = 9; // 绩效奖池
 
-	double seven = 10; // 直推激活奖励
+	string seven = 10; // 直推激活奖励
 
 	double withdrawMin = 13; // 最大提现
 	double withdrawMax = 12; // 最小提现
 
-	double fiveOne = 21;// 静态奖励
-	double fiveTwo = 22;// 直推奖励
-	double fiveThree = 23;// 团队奖励
-	double fiveFour = 24;// 大区业绩
-	double fiveFive = 25;// 小区业绩
-	double fiveSix = 26;// 总业绩
+	string fiveOne = 21;// 静态奖励
+	string fiveTwo = 22;// 直推奖励
+	string fiveThree = 23;// 团队奖励
+	string fiveFour = 24;// 大区业绩
+	string fiveFive = 25;// 小区业绩
+	string fiveSix = 26;// 总业绩
 
 	repeated List list = 31; // 前三名 绩效
 	message List {
 		string address = 3; // 地址
-		double amount = 2; // 绩效
-		double reward = 1; // 奖励金额
+		string amount = 2; // 绩效
+		string reward = 1; // 奖励金额
 	}
 
 	repeated ListTwo listTwo = 32; // 前三名 推广
 	message ListTwo {
 		string address = 3; // 地址
 		uint64 num = 2; // 人数
-		double reward = 1; // 奖励金额
+		string reward = 1; // 奖励金额
 	}
 }
 
@@ -454,7 +454,7 @@ message RewardListReply {
 	repeated List list = 1;
 	message List {
 		string createdAt = 1; // 时间
-		double amount = 2; // 金额
+		string amount = 2; // 金额
 		string address = 3;
 	}
 }
@@ -506,7 +506,7 @@ message SetTodayListReply {
 	repeated List list = 1;
 	message List {
 		string createdAt = 1; // 签到时间
-		double amount = 2; // 签到奖励
+		string amount = 2; // 签到奖励
 	}
 }
 
@@ -520,7 +520,7 @@ message WithdrawListReply {
 	repeated List list = 1;
 	message List {
 		string createdAt = 1; // 时间
-		double amount = 2; // 金额
+		string amount = 2; // 金额
 	}
 }
 
@@ -534,7 +534,7 @@ message OrderListReply {
 	repeated List list = 1;
 	message List {
 		string createdAt = 1; // 时间
-		double amount = 2; // 金额
+		string amount = 2; // 金额
 		uint64 status = 3;
 	}
 }
@@ -578,7 +578,7 @@ message RecommendListReply {
 	repeated List recommends = 1;
 	message List {
 		string address = 1;
-		double amount = 2;
+		string amount = 2;
 		string createdAt = 3;
 	}
 }

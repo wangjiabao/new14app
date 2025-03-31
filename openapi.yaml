@@ -864,8 +864,7 @@ components:
                 createdAt:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
                 status:
                     type: string
         PasswordChangeReply:
@@ -902,8 +901,7 @@ components:
                 address:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
                 createdAt:
                     type: string
         RecommendRewardListReply:
@@ -955,8 +953,7 @@ components:
                 createdAt:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
                 address:
                     type: string
         SetBalanceRewardReply:
@@ -986,8 +983,7 @@ components:
                 createdAt:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
         SetTodayReply:
             type: object
             properties:
@@ -1117,23 +1113,17 @@ components:
                 status:
                     type: string
                 one:
-                    type: number
-                    format: double
+                    type: string
                 two:
-                    type: number
-                    format: double
+                    type: string
                 three:
-                    type: number
-                    format: double
+                    type: string
                 four:
-                    type: number
-                    format: double
+                    type: string
                 fourOne:
-                    type: number
-                    format: double
+                    type: string
                 raw:
-                    type: number
-                    format: double
+                    type: string
                 myAddress:
                     type: string
                 inviteUserAddress:
@@ -1144,14 +1134,11 @@ components:
                     type: number
                     format: double
                 five:
-                    type: number
-                    format: double
+                    type: string
                 six:
-                    type: number
-                    format: double
+                    type: string
                 seven:
-                    type: number
-                    format: double
+                    type: string
                 withdrawMin:
                     type: number
                     format: double
@@ -1159,23 +1146,17 @@ components:
                     type: number
                     format: double
                 fiveOne:
-                    type: number
-                    format: double
+                    type: string
                 fiveTwo:
-                    type: number
-                    format: double
+                    type: string
                 fiveThree:
-                    type: number
-                    format: double
+                    type: string
                 fiveFour:
-                    type: number
-                    format: double
+                    type: string
                 fiveFive:
-                    type: number
-                    format: double
+                    type: string
                 fiveSix:
-                    type: number
-                    format: double
+                    type: string
                 list:
                     type: array
                     items:
@@ -1190,11 +1171,9 @@ components:
                 address:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
                 reward:
-                    type: number
-                    format: double
+                    type: string
         UserInfoReply_ListTwo:
             type: object
             properties:
@@ -1203,8 +1182,7 @@ components:
                 num:
                     type: string
                 reward:
-                    type: number
-                    format: double
+                    type: string
         WithdrawListReply:
             type: object
             properties:
@@ -1222,8 +1200,7 @@ components:
                 createdAt:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
         WithdrawReply:
             type: object
             properties:
