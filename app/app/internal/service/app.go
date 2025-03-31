@@ -47,8 +47,12 @@ func NewAppService(uuc *biz.UserUseCase, ruc *biz.RecordUseCase, logger log.Logg
 	return &AppService{uuc: uuc, ruc: ruc, log: log.NewHelper(logger), ca: ca}
 }
 
+var lockEthAuthorize sync.Mutex
+
 // EthAuthorize ethAuthorize.
 func (a *AppService) EthAuthorize(ctx context.Context, req *v1.EthAuthorizeRequest) (*v1.EthAuthorizeReply, error) {
+	lockEthAuthorize.Lock()
+	defer lockEthAuthorize.Unlock()
 	userAddress := req.SendBody.Address // 以太坊账户
 	if "" == userAddress || 20 > len(userAddress) ||
 		strings.EqualFold("0x000000000000000000000000000000000000dead", userAddress) {
