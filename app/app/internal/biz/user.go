@@ -2390,11 +2390,6 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 				continue
 			}
 
-			// 本次执行已经出局
-			if _, ok := stopUserIds[tmpUserId]; ok {
-				continue
-			}
-
 			if _, ok := usersMap[tmpUserId]; !ok {
 				fmt.Println("buy遍历，信息缺失,user：", err, v, tmpUserId)
 				continue
@@ -2426,6 +2421,11 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 				return nil
 			}); nil != err {
 				fmt.Println("遍历业绩：", err, v)
+				continue
+			}
+
+			// 本次执行已经出局
+			if _, ok := stopUserIds[tmpUserId]; ok {
 				continue
 			}
 
