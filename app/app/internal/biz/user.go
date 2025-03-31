@@ -1085,19 +1085,19 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 			listTwo = append(listTwo, &v1.UserInfoReply_ListTwo{
 				Address: v.Address,
 				Num:     v.AmountBiw,
-				Reward:  fmt.Sprintf("%.4f", total.One*allOne*0.5),
+				Reward:  fmt.Sprintf("%.2f", total.One*allOne*0.5),
 			})
 		} else if 1 == k {
 			listTwo = append(listTwo, &v1.UserInfoReply_ListTwo{
 				Address: v.Address,
 				Num:     v.AmountBiw,
-				Reward:  fmt.Sprintf("%.4f", total.One*allOne*0.3),
+				Reward:  fmt.Sprintf("%.2f", total.One*allOne*0.3),
 			})
 		} else if 2 == k {
 			listTwo = append(listTwo, &v1.UserInfoReply_ListTwo{
 				Address: v.Address,
 				Num:     v.AmountBiw,
-				Reward:  fmt.Sprintf("%.4f", total.One*allOne*0.2),
+				Reward:  fmt.Sprintf("%.2f", total.One*allOne*0.2),
 			})
 		} else {
 			break
@@ -1122,20 +1122,20 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		if 0 == k {
 			list = append(list, &v1.UserInfoReply_List{
 				Address: v.Address,
-				Amount:  fmt.Sprintf("%.4f", v.AmountRecommendUsdtGet),
-				Reward:  fmt.Sprintf("%.4f", total.One*allTwo*0.5),
+				Amount:  fmt.Sprintf("%.2f", v.AmountRecommendUsdtGet),
+				Reward:  fmt.Sprintf("%.2f", total.One*allTwo*0.5),
 			})
 		} else if 1 == k {
 			list = append(list, &v1.UserInfoReply_List{
 				Address: v.Address,
-				Amount:  fmt.Sprintf("%.4f", v.AmountRecommendUsdtGet),
-				Reward:  fmt.Sprintf("%.4f", total.One*allTwo*0.3),
+				Amount:  fmt.Sprintf("%.2f", v.AmountRecommendUsdtGet),
+				Reward:  fmt.Sprintf("%.2f", total.One*allTwo*0.3),
 			})
 		} else if 2 == k {
 			list = append(list, &v1.UserInfoReply_List{
 				Address: v.Address,
-				Amount:  fmt.Sprintf("%.4f", v.AmountRecommendUsdtGet),
-				Reward:  fmt.Sprintf("%.4f", total.One*allTwo*0.2),
+				Amount:  fmt.Sprintf("%.2f", v.AmountRecommendUsdtGet),
+				Reward:  fmt.Sprintf("%.2f", total.One*allTwo*0.2),
 			})
 		} else {
 			break
@@ -1143,26 +1143,26 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 	}
 
 	return &v1.UserInfoReply{
-		Raw:               fmt.Sprintf("%.4f", userBalance.BalanceRawFloat),
-		FourOne:           fmt.Sprintf("%.4f", myUser.AmountUsdtGet),
-		FiveOne:           fmt.Sprintf("%.4f", userBalance.LocationTotalFloat),
-		FiveTwo:           fmt.Sprintf("%.4f", userBalance.RecommendTotalFloat+userBalance.RecommendTotalFloatTwo),
-		FiveThree:         fmt.Sprintf("%.4f", userBalance.AreaTotalFloat),
-		FiveFour:          fmt.Sprintf("%.4f", tmpAreaMax),
-		FiveFive:          fmt.Sprintf("%.4f", tmpAreaMin),
-		FiveSix:           fmt.Sprintf("%.4f", myUser.MyTotalAmount),
+		Raw:               fmt.Sprintf("%.2f", userBalance.BalanceRawFloat),
+		FourOne:           fmt.Sprintf("%.2f", myUser.AmountUsdtGet),
+		FiveOne:           fmt.Sprintf("%.2f", userBalance.LocationTotalFloat),
+		FiveTwo:           fmt.Sprintf("%.2f", userBalance.RecommendTotalFloat+userBalance.RecommendTotalFloatTwo),
+		FiveThree:         fmt.Sprintf("%.2f", userBalance.AreaTotalFloat),
+		FiveFour:          fmt.Sprintf("%.2f", tmpAreaMax),
+		FiveFive:          fmt.Sprintf("%.2f", tmpAreaMin),
+		FiveSix:           fmt.Sprintf("%.2f", myUser.MyTotalAmount),
 		Status:            "ok",
-		One:               fmt.Sprintf("%.4f", userBalance.BalanceUsdtFloat),
-		Two:               fmt.Sprintf("%.4f", float64(myUser.Amount)),
-		Three:             fmt.Sprintf("%.4f", myUser.AmountUsdt),
-		Four:              fmt.Sprintf("%.4f", four),
+		One:               fmt.Sprintf("%.2f", userBalance.BalanceUsdtFloat),
+		Two:               fmt.Sprintf("%.2f", float64(myUser.Amount)),
+		Three:             fmt.Sprintf("%.2f", myUser.AmountUsdt),
+		Four:              fmt.Sprintf("%.2f", four),
 		MyAddress:         myUser.Address,
 		InviteUserAddress: inviteUserAddress,
 		Level:             tmpVip,
 		Price:             bPrice,
-		Five:              fmt.Sprintf("%.4f", total.One*allOne),
-		Six:               fmt.Sprintf("%.4f", total.One*allTwo),
-		Seven:             fmt.Sprintf("%.4f", float64(myUser.RecommendUserH)),
+		Five:              fmt.Sprintf("%.2f", total.One*allOne),
+		Six:               fmt.Sprintf("%.2f", total.One*allTwo),
+		Seven:             fmt.Sprintf("%.2f", float64(myUser.RecommendUserH)),
 		WithdrawMin:       withdrawMin,
 		WithdrawMax:       withdrawMax,
 		List:              list,
@@ -1233,7 +1233,7 @@ func (uuc *UserUseCase) UserRecommend(ctx context.Context, req *v1.RecommendList
 		recommendTotal++
 		res = append(res, &v1.RecommendListReply_List{
 			Address:   usersMap[vMyUserRecommend.UserId].Address,
-			Amount:    fmt.Sprintf("%.4f", usersMap[vMyUserRecommend.UserId].MyTotalAmount+usersMap[vMyUserRecommend.UserId].AmountUsdt),
+			Amount:    fmt.Sprintf("%.2f", usersMap[vMyUserRecommend.UserId].MyTotalAmount+usersMap[vMyUserRecommend.UserId].AmountUsdt),
 			CreatedAt: vMyUserRecommend.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 		})
 	}
@@ -1703,7 +1703,7 @@ func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListReques
 	for _, vUserReward := range userRewards {
 		res = append(res, &v1.RewardListReply_List{
 			CreatedAt: vUserReward.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-			Amount:    fmt.Sprintf("%.4f", vUserReward.AmountNew),
+			Amount:    fmt.Sprintf("%.2f", vUserReward.AmountNew),
 			Address:   vUserReward.Address,
 		})
 	}
@@ -1782,7 +1782,7 @@ func (uuc *UserUseCase) SetTodayList(ctx context.Context, user *User) (*v1.SetTo
 	for _, vStake := range stake {
 		res = append(res, &v1.SetTodayListReply_List{
 			CreatedAt: vStake.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-			Amount:    fmt.Sprintf("%.4f", vStake.Amount),
+			Amount:    fmt.Sprintf("%.2f", vStake.Amount),
 		})
 	}
 
@@ -1829,7 +1829,7 @@ func (uuc *UserUseCase) WithdrawList(ctx context.Context, req *v1.WithdrawListRe
 	for _, v := range withdraws {
 		res.List = append(res.List, &v1.WithdrawListReply_List{
 			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-			Amount:    fmt.Sprintf("%.4f", v.AmountNew),
+			Amount:    fmt.Sprintf("%.2f", v.AmountNew),
 		})
 	}
 
@@ -1932,7 +1932,7 @@ func (uuc *UserUseCase) OrderList(ctx context.Context, req *v1.OrderListRequest,
 	for _, vBuyRecord := range buyRecord {
 		res = append(res, &v1.OrderListReply_List{
 			CreatedAt: vBuyRecord.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-			Amount:    fmt.Sprintf("%.4f", vBuyRecord.Amount),
+			Amount:    fmt.Sprintf("%.2f", vBuyRecord.Amount),
 			Status:    uint64(vBuyRecord.Status),
 		})
 	}
