@@ -455,6 +455,7 @@ message RewardListReply {
 	message List {
 		string createdAt = 1; // 时间
 		double amount = 2; // 金额
+		string address = 3;
 	}
 }
 

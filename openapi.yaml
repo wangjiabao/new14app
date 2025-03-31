@@ -957,6 +957,8 @@ components:
                 amount:
                     type: number
                     format: double
+                address:
+                    type: string
         SetBalanceRewardReply:
             type: object
             properties:

@@ -1704,6 +1704,7 @@ func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListReques
 		res = append(res, &v1.RewardListReply_List{
 			CreatedAt: vUserReward.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 			Amount:    vUserReward.AmountNew,
+			Address:   vUserReward.Address,
 		})
 	}
 
