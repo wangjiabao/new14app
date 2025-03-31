@@ -388,9 +388,26 @@ func (c *ConfigRepo) UpdateConfig(ctx context.Context, id int64, value string) (
 // UpdateUserMyRecommendTotalNum .
 func (u *UserRepo) UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64, address string, rewardHb int64, tmpRewardU bool) error {
 	updateMap := map[string]interface{}{
-		"recommend_user":   gorm.Expr("recommend_user + ?", 1),
-		"recommend_user_h": rewardHb,
-		"amount_biw":       gorm.Expr("amount_biw + ?", 1), // 这里字段用记录直推激活人数，和金额
+		"recommend_user": gorm.Expr("recommend_user + ?", 1),
+		"amount_biw":     gorm.Expr("amount_biw + ?", 1), // 这里字段用记录直推激活人数，和金额
+	}
+
+	if 0 < rewardHb {
+		updateMap["recommend_user_h"] = gorm.Expr("recommend_user_h + ?", rewardHb)
+
+		var (
+			err    error
+			reward Reward
+		)
+		reward.UserId = userId
+		reward.AmountNew = float64(rewardHb)
+		reward.Address = address
+		reward.Type = "system_reward_recommend_four" // 本次分红的行为类型
+		reward.Reason = "recommend_h"
+		err = u.data.DB(ctx).Table("reward").Create(&reward).Error
+		if err != nil {
+			return err
+		}
 	}
 
 	if tmpRewardU {

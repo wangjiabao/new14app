@@ -495,17 +495,17 @@ func (uuc *UserUseCase) GetExistUserByAddressOrCreate(ctx context.Context, u *Us
 				tmpRUser := rUser.RecommendUser
 				tmpRUser += 1
 				tmpRewardHb := int64(0)
-				if 1 <= tmpRUser && tmpRUser < 3 {
+				if 1 == tmpRUser {
 
-				} else if 3 <= tmpRUser && tmpRUser < 8 {
+				} else if 3 == tmpRUser {
 					tmpRewardHb = 299
-				} else if 8 <= tmpRUser && tmpRUser < 16 {
+				} else if 8 == tmpRUser {
 					tmpRewardHb = 999
-				} else if 16 <= tmpRUser && tmpRUser < 50 {
+				} else if 16 == tmpRUser {
 					tmpRewardHb = 2999
-				} else if 50 <= tmpRUser && tmpRUser < 100 {
+				} else if 50 == tmpRUser {
 					tmpRewardHb = 5999
-				} else if 100 <= tmpRUser {
+				} else if 100 == tmpRUser {
 					tmpRewardHb = 9999
 				}
 
