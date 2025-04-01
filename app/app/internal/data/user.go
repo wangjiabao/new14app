@@ -790,7 +790,7 @@ func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId int64, amount
 	}
 
 	res = u.data.DB(ctx).Table("total").Where("id=?", 1).
-		Updates(map[string]interface{}{"one": gorm.Expr("one + ?", amountUsdt)})
+		Updates(map[string]interface{}{"one": gorm.Expr("one + ?", amountUsdt), "two": gorm.Expr("two + ?", amountUsdt)})
 	if res.Error != nil {
 		return errors.New(500, "UPDATE_USER_ERROR", "one信息修改失败")
 	}
