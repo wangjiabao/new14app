@@ -2981,6 +2981,11 @@ func (ub *UserBalanceRepo) GreateWithdraw(ctx context.Context, userId int64, rel
 	if res.Error != nil {
 		return nil, errors.New(500, "CREATE_WITHDRAW_ERROR", "提现记录创建失败")
 	}
+	res = ub.data.DB(ctx).Table("total").Where("id=?", 1).
+		Updates(map[string]interface{}{"three": gorm.Expr("three + ?", amount)})
+	if res.Error != nil {
+		return nil, errors.New(500, "UPDATE_USER_ERROR", "one信息修改失败")
+	}
 
 	var (
 		reward Reward
