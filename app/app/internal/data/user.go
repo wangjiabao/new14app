@@ -38,6 +38,7 @@ type User struct {
 	AmountUsdtGet          float64   `gorm:"type:decimal(65,20);not null"`
 	AmountRecommendUsdtGet float64   `gorm:"type:decimal(65,20);not null"`
 	Last                   uint64    `gorm:"type:bigint;not null"`
+	LastBiw                uint64    `gorm:"type:bigint;not null"`
 	RecommendUserReward    int64     `gorm:"type:int;not null"`
 	RecommendUser          int64     `gorm:"type:int;not null"`
 	RecommendUserH         int64     `gorm:"type:int;not null"`
@@ -1274,6 +1275,7 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 	user.Address = uc.Address
 	user.Password = uc.Password
 	user.Amount = 18
+	user.LastBiw = 18
 
 	//user.AddressTwo = uc.AddressTwo
 	//user.PrivateKey = uc.PrivateKey
