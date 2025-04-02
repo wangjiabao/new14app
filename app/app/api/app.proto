@@ -408,6 +408,9 @@ message UserInfoReply {
 	string fourOne = 5; // 已释放
 	string raw = 30;
 
+	string amountFour = 91;
+	string amountFourGet = 92;
+
 	string myAddress = 14; // 我的地址
 	string inviteUserAddress = 15; // 我的直推人地址
 	uint64 level = 6; // 我的vip级别

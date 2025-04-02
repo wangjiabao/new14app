@@ -1124,6 +1124,10 @@ components:
                     type: string
                 raw:
                     type: string
+                amountFour:
+                    type: string
+                amountFourGet:
+                    type: string
                 myAddress:
                     type: string
                 inviteUserAddress:

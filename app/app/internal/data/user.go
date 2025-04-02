@@ -36,6 +36,8 @@ type User struct {
 	AmountUsdt             float64   `gorm:"type:decimal(65,20);not null"`
 	MyTotalAmount          float64   `gorm:"type:decimal(65,20);not null"`
 	AmountUsdtGet          float64   `gorm:"type:decimal(65,20);not null"`
+	AmountFourGet          float64   `gorm:"type:decimal(65,20);not null"`
+	AmountFour             float64   `gorm:"type:decimal(65,20);not null"`
 	AmountRecommendUsdtGet float64   `gorm:"type:decimal(65,20);not null"`
 	Last                   uint64    `gorm:"type:bigint;not null"`
 	LastBiw                uint64    `gorm:"type:bigint;not null"`
@@ -976,6 +978,8 @@ func (u *UserRepo) GetUserById(ctx context.Context, Id int64) (*biz.User, error)
 		RecommendUser:          user.RecommendUser,
 		RecommendUserReward:    user.RecommendUserReward,
 		RecommendUserH:         user.RecommendUserH,
+		AmountFour:             user.AmountFour,
+		AmountFourGet:          user.AmountFourGet,
 	}, nil
 }
 

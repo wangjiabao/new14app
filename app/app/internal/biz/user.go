@@ -42,6 +42,8 @@ type User struct {
 	MyTotalAmount          float64
 	AmountUsdtGet          float64
 	AmountRecommendUsdtGet float64
+	AmountFour             float64
+	AmountFourGet          float64
 	RecommendUserReward    int64
 	RecommendUser          int64
 	RecommendUserH         int64
@@ -1167,6 +1169,8 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		WithdrawMax:       withdrawMax,
 		List:              list,
 		ListTwo:           listTwo,
+		AmountFour:        fmt.Sprintf("%.2f", myUser.AmountFour),
+		AmountFourGet:     fmt.Sprintf("%.2f", myUser.AmountFourGet),
 	}, nil
 }
 
@@ -1688,6 +1692,8 @@ func (uuc *UserUseCase) RewardList(ctx context.Context, req *v1.RewardListReques
 		reason = "withdraw"
 	} else if 14 == req.ReqType {
 		reason = "recommend_three"
+	} else if 15 == req.ReqType {
+		reason = "four_reward"
 	}
 
 	userRewards, err, count = uuc.ubRepo.GetUserRewardByUserIdPage(ctx, &Pagination{
@@ -1864,13 +1870,13 @@ func (uuc *UserUseCase) SetToday(ctx context.Context, req *v1.SetTodayRequest, u
 	}
 	todayStart := time.Date(lasUpdated.Year(), lasUpdated.Month(), lasUpdated.Day(), 16, 0, 0, 0, time.UTC)
 
-	//for _, vStake := range stake {
-	//	if todayStart.Unix() <= vStake.Day {
-	//		return &v1.SetTodayReply{
-	//			Status: "今日已经签到",
-	//		}, nil
-	//	}
-	//}
+	for _, vStake := range stake {
+		if todayStart.Unix() <= vStake.Day {
+			return &v1.SetTodayReply{
+				Status: "今日已经签到",
+			}, nil
+		}
+	}
 
 	amount := float64(1)
 	if 4 == len(stake) {
@@ -2435,7 +2441,7 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 			}
 
 			// 入金
-			if 0 < tmpRecommendUser.AmountUsdt {
+			if 0 < tmpRecommendUser.AmountUsdt && 0 == usersMap[v.UserId].LockReward {
 				if 2 >= tmpRecommendTotal {
 
 					var (
