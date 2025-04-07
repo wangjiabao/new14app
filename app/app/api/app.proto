@@ -401,6 +401,9 @@ message UserInfoRequest {
 message UserInfoReply {
 	string status = 11;
 
+	uint64 currentTime = 112;
+	uint64 endTime = 113;
+
 	string one = 1; // 利润钱包
 	string two = 2;// 本金钱包
 	string three = 3; // 总认购

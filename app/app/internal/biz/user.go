@@ -295,7 +295,7 @@ type UserBalanceRepo interface {
 	GetUserBalanceUsdtTotal(ctx context.Context) (int64, error)
 	GreateWithdraw(ctx context.Context, userId int64, relAmount float64, amount float64, coinType string, address string) (*Withdraw, error)
 	WithdrawUsdt(ctx context.Context, userId int64, amount int64, tmpRecommendUserIdsInt []int64) error
-	WithdrawUsdt2(ctx context.Context, userId int64, amount float64) error
+	WithdrawUsdt2(ctx context.Context, userId int64, amount, amountSubFee float64) error
 	ToAddressAmountUsdt(ctx context.Context, userId int64, toUserId int64, amount float64, address string) error
 	ToAddressAmountKsdt(ctx context.Context, userId int64, toUserId int64, amount float64, address string) error
 	ToAddressAmountRaw(ctx context.Context, userId int64, toUserId int64, amount float64, address string) error
@@ -382,7 +382,7 @@ type UserRepo interface {
 	UpdateUserNewTwoNew(ctx context.Context, userId int64, amount uint64, amountUsdt float64, last uint64) error
 	UpdateUserMyTotalAmount(ctx context.Context, userId int64, amountUsdt float64) error
 	UpdateUserMyRecommendTotalNum(ctx context.Context, userId int64, address string, rewardHb int64, tmpRewardU bool) error
-	UpdateUserMyRecommendTotal(ctx context.Context, userId int64, amountUsdt float64) error
+	UpdateUserMyRecommendTotal(ctx context.Context, userId int64, amountUsdt float64, firstBuy bool) error
 	UpdateUserVip(ctx context.Context, userId int64, vip int64) error
 	UpdateUserRewardRecommend2(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, level, i int64, address string) (int64, error)
 	UpdateUserRewardRecommendNew(ctx context.Context, userId int64, amountUsdt float64, amountUsdtTotal float64, stop bool, i int64, address string) (int64, error)
@@ -1144,7 +1144,10 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		}
 	}
 
+	now := time.Now().Unix()
 	return &v1.UserInfoReply{
+		CurrentTime:       uint64(now),
+		EndTime:           uint64(GetCurrentCycleEndTime().Unix()),
 		Raw:               fmt.Sprintf("%.2f", userBalance.BalanceRawFloat),
 		FourOne:           fmt.Sprintf("%.2f", myUser.AmountUsdtGet),
 		FiveOne:           fmt.Sprintf("%.2f", userBalance.LocationTotalFloat),
@@ -1172,6 +1175,30 @@ func (uuc *UserUseCase) UserInfo(ctx context.Context, user *User) (*v1.UserInfoR
 		AmountFour:        fmt.Sprintf("%.2f", myUser.AmountFour),
 		AmountFourGet:     fmt.Sprintf("%.2f", myUser.AmountFourGet),
 	}, nil
+}
+
+func GetCurrentCycleEndTime() time.Time {
+	startTimeStr := "2025-04-01 16:00:00"
+	startTime, _ := time.Parse("2006-01-02 15:04:05", startTimeStr)
+
+	now := time.Now()
+
+	// 如果当前时间早于开始时间，就返回第一个周期的结束时间
+	if now.Before(startTime) {
+		return startTime.AddDate(0, 0, 15)
+	}
+
+	// 周期长度（15天）
+	cycleDuration := time.Hour * 24 * 15
+	elapsed := now.Sub(startTime)
+
+	// 当前时间属于第几个周期（从0开始）
+	cycleIndex := int(elapsed / cycleDuration)
+
+	// 当前时间所在周期的结束时间（= 下一个周期开始时间）
+	currentCycleEnd := startTime.Add(time.Duration(cycleIndex+1) * cycleDuration)
+
+	return currentCycleEnd
 }
 
 func (uuc *UserUseCase) UserRecommend(ctx context.Context, req *v1.RecommendListRequest) (*v1.RecommendListReply, error) {
@@ -2353,6 +2380,11 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 			continue
 		}
 
+		tmpFirstBuy := false
+		if 0 >= usersMap[v.UserId].OutRate {
+			tmpFirstBuy = true
+		}
+
 		if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = uuc.repo.UpdateUserNewTwoNew(ctx, v.UserId, amount, float64(amount), last)
 			if nil != err {
@@ -2410,7 +2442,7 @@ func (uuc *UserUseCase) EthUserRecordHandle(ctx context.Context, amount uint64, 
 			if i == totalTmp {
 				// 增加业绩
 				if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-					err = uuc.repo.UpdateUserMyRecommendTotal(ctx, tmpUserId, float64(amount))
+					err = uuc.repo.UpdateUserMyRecommendTotal(ctx, tmpUserId, float64(amount), tmpFirstBuy)
 					if err != nil {
 						return err
 					}
@@ -2891,12 +2923,13 @@ func (uuc *UserUseCase) Withdraw(ctx context.Context, req *v1.WithdrawRequest, u
 
 	// 配置
 	var (
-		configs     []*Config
-		withdrawMax float64
-		withdrawMin float64
+		configs      []*Config
+		withdrawRate float64
+		withdrawMax  float64
+		withdrawMin  float64
 	)
 	configs, err = uuc.configRepo.GetConfigByKeys(ctx,
-		"withdraw_amount_max", "withdraw_amount_min",
+		"withdraw_amount_max", "withdraw_amount_min", "withdraw_rate",
 	)
 	if nil != configs {
 		for _, vConfig := range configs {
@@ -2907,6 +2940,11 @@ func (uuc *UserUseCase) Withdraw(ctx context.Context, req *v1.WithdrawRequest, u
 			if "withdraw_amount_min" == vConfig.KeyName {
 				withdrawMin, _ = strconv.ParseFloat(vConfig.Value, 10)
 			}
+
+			if "withdraw_rate" == vConfig.KeyName {
+				withdrawRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+			}
+
 		}
 	}
 
@@ -2922,15 +2960,15 @@ func (uuc *UserUseCase) Withdraw(ctx context.Context, req *v1.WithdrawRequest, u
 		}, nil
 	}
 
-	amountFloatSubFee := amountFloat
-	if 0 >= amountFloat {
+	amountFloatSubFee := amountFloat - amountFloat*withdrawRate
+	if 0 >= amountFloatSubFee {
 		return &v1.WithdrawReply{
-			Status: "fail price",
+			Status: "fail rate",
 		}, nil
 	}
 
 	if err = uuc.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		err = uuc.ubRepo.WithdrawUsdt2(ctx, user.ID, amountFloat) // 提现
+		err = uuc.ubRepo.WithdrawUsdt2(ctx, user.ID, amountFloat, amountFloatSubFee) // 提现
 		if nil != err {
 			return err
 		}

@@ -1112,6 +1112,10 @@ components:
             properties:
                 status:
                     type: string
+                currentTime:
+                    type: string
+                endTime:
+                    type: string
                 one:
                     type: string
                 two:
